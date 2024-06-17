@@ -1,0 +1,27 @@
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^HECHAS^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tablas sin dependencias:
+Estadisticas
+Ligas
+Objeto
+Tablas que dependen de Estadisticas:
+
+Equipo (depende de Estadisticas)
+Jugador (depende de Estadisticas, Equipo)
+Partidos (depende de Estadisticas)
+
+
+
+-----------------------SIN HACER-----------------------------------------------------
+Tablas que dependen de otras tablas ya mencionadas:
+
+Plantilla (depende de Manager)
+Jornada (depende de Plantilla)
+CartaJugador (depende de Plantilla)
+Manager (depende de CartaJugador)
+Tablas que dependen de Manager y CartaJugador:
+
+Objeto_has_Manager (depende de Objeto, Manager)
+Objeto_has_CartaJugador (depende de Objeto, CartaJugador)
+Manager_has_Ligas (depende de Manager, Ligas)

@@ -1,0 +1,53 @@
+*CARTAS
+    -Una carta tiene un jugador
+    -Una carta tiene una plantilla
+    -Una carta tiene un manager
+    -Una carta tiene varios objetos
+
+*JUGADORES
+    -Un jugador tiene varios equipos (posible transpasos de invierno)
+    -Un jugador tiene varias tablas de estadisticas(una por partido que juegue)
+    -Un jugador tiene varias carta(una por manager)    
+
+*PARTIDO
+    -Un partido tiene una única jornada
+    -Un partido tiene varios equipos (un equipo local y un equipo visitante)
+
+*PLANTILLA
+    -Una plantilla sirve para una jornada
+    -Una plantilla tiene varias cartas
+
+*OBJETOS
+    -Un objeto se usa en una carta
+    -Un objeto es de un manage
+
+*MANAGER
+    -Un manager tiene varias plantillas(por cada jornada una nueva)
+    -Un manager juega varias ligas
+    -Un manager tiene varios objetos
+    -Un manager tiene varias cartas
+
+*TEMPORADA
+    -Una temporada tiene muchas jornadas
+    -Una temporada tiene varias ligas(A?)
+
+*LIGAS
+    -Una liga tiene varios managers
+    -Una liga tiene varias jornadas(B?)
+    -Una liga tiene varias temporada(A?)
+
+*JORNADA
+    -Una jornada tiene muchos partidos
+    -Una jornada solo pertenece a una temporada
+    -Una jornada tiene muchas plantillas
+    -Una jornada tiene varias ligas(B)?
+
+*EQUIPO
+    -Un equipo tiene varios jugadores
+    -Un equipo juega varios partidos
+    -Un equipo tiene varias tablas de estadisticas(Una por partido)(C?) 
+
+ESTADISTICAS
+    -Una tabla de estadisticas tiene un partido
+    -Una tabla de estadisticas tiene varios jugadores
+    -Una tabla de estadisticas tiene varios equipos(Una por partido)(C?)
