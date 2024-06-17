@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
 
 interface Partido {
-    idPartidos: number;
-    Fecha: string;
-    Jornada_idJornada: number;
-    Estadisticas_idEstadisticas: number;
+    idPartido: number;
+    idJornada: number;
+    idEquipoLocal: number;
+    idEquipoVisitante: number;
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("SELECT * FROM mydb.partidos WHERE idPartidos = ?", [params.id]) as Partido[];
+        const result = await db.query("SELECT * FROM mydb.partido WHERE idPartido = ?", [params.id]) as Partido[];
         if (!result.length) {
             console.log(`No se encontró el partido con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró el partido" }, { status: 404 });
@@ -25,13 +25,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const { Fecha, Jornada_idJornada, Estadisticas_idEstadisticas } = await req.json();
+        const { idJornada, idEquipoLocal, idEquipoVisitante } = await req.json();
 
-        if (!Fecha || !Jornada_idJornada || !Estadisticas_idEstadisticas) {
-            return NextResponse.json({ message: "Fecha, Jornada_idJornada y Estadisticas_idEstadisticas son requeridos" }, { status: 400 });
+        if (!idJornada || !idEquipoLocal || !idEquipoVisitante) {
+            return NextResponse.json({ message: "Todos los campos son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("UPDATE mydb.partidos SET Fecha = ?, Jornada_idJornada = ?, Estadisticas_idEstadisticas = ? WHERE idPartidos = ?", [Fecha, Jornada_idJornada, Estadisticas_idEstadisticas, params.id]) as any;
+        const result = await db.query("UPDATE mydb.partido SET idJornada = ?, idEquipoLocal = ?, idEquipoVisitante = ? WHERE idPartido = ?", [idJornada, idEquipoLocal, idEquipoVisitante, params.id]) as any;
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró el partido para actualizar" }, { status: 404 });
@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("DELETE FROM mydb.partidos WHERE idPartidos = ?", [params.id]) as any;
+        const result = await db.query("DELETE FROM mydb.partido WHERE idPartido = ?", [params.id]) as any;
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró el partido para eliminar" }, { status: 404 });

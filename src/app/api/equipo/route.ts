@@ -4,7 +4,6 @@ import { db } from "@/libs/mysql";
 interface Equipo {
     idEquipo: number;
     Nombre: string;
-    Estadisticas_idEstadisticas: number;
 }
 
 export async function GET() {
@@ -24,13 +23,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     try {
-        const { Nombre, Estadisticas_idEstadisticas } = await req.json();
+        const { Nombre } = await req.json();
 
-        if (!Nombre || !Estadisticas_idEstadisticas) {
-            return NextResponse.json({ message: "Nombre y Estadisticas_idEstadisticas son requeridos" }, { status: 400 });
+        if (!Nombre) {
+            return NextResponse.json({ message: "Nombre es requerido" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.equipo (Nombre, Estadisticas_idEstadisticas) VALUES (?, ?)", [Nombre, Estadisticas_idEstadisticas]) as any;
+        const result = await db.query("INSERT INTO mydb.equipo (Nombre) VALUES (?)", [Nombre]) as any;
 
         console.log("Equipo insertado:", result);
         return NextResponse.json({ message: "Equipo insertado exitosamente", result }, { status: 201 });

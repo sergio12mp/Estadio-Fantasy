@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
 
-interface Objeto {
-    idObjeto: number;
+interface Objetos {
+    idObjetos: number;
     Nombre: string;
+    Precio: number;
     Descripcion: string;
 }
 
 export async function GET() {
     try {
-        const result = await db.query("SELECT * FROM mydb.objeto") as Objeto[];
+        const result = await db.query("SELECT * FROM mydb.objetos") as Objetos[];
         if (!result.length) {
             console.log("No se encontraron objetos");
             return NextResponse.json({ message: "No se encontraron objetos" }, { status: 404 });
@@ -24,13 +25,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     try {
-        const { Nombre, Descripcion } = await req.json();
+        const { Nombre, Precio, Descripcion } = await req.json();
 
-        if (!Nombre || !Descripcion) {
-            return NextResponse.json({ message: "Nombre y Descripcion son requeridos" }, { status: 400 });
+        if (!Nombre || !Precio || !Descripcion) {
+            return NextResponse.json({ message: "Nombre, Precio y Descripcion son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.objeto (Nombre, Descripcion) VALUES (?, ?)", [Nombre, Descripcion]) as any;
+        const result = await db.query("INSERT INTO mydb.objetos (Nombre, Precio, Descripcion) VALUES (?, ?, ?)", [Nombre, Precio, Descripcion]) as any;
 
         console.log("Objeto insertado:", result);
         return NextResponse.json({ message: "Objeto insertado exitosamente", result }, { status: 201 });

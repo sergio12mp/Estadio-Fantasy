@@ -4,14 +4,11 @@ import { db } from "@/libs/mysql";
 interface Jugador {
     idJugador: number;
     Nombre: string;
+    Edad: string;
     Pais: string;
     Posicion: string;
-    Edad: string;
-    Estadisticas_idEstadisticas: number;
-    Estadisticas_idEstadisticas1: number;
-    Equipo_idEquipo: number;
-    Equipo_Estadisticas_idEstadisticas: number;
-    CartaJugador_idCartaJugador: number;
+    Precio: number;
+    idEquipo: number;
 }
 
 export async function GET() {
@@ -31,13 +28,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     try {
-        const { Nombre, Pais, Posicion, Edad, Estadisticas_idEstadisticas, Estadisticas_idEstadisticas1, Equipo_idEquipo, Equipo_Estadisticas_idEstadisticas, CartaJugador_idCartaJugador } = await req.json();
+        const { Nombre, Edad, Pais, Posicion, Precio, idEquipo } = await req.json();
 
-        if (!Nombre || !Pais || !Posicion || !Edad || !Estadisticas_idEstadisticas || !Estadisticas_idEstadisticas1 || !Equipo_idEquipo || !Equipo_Estadisticas_idEstadisticas || !CartaJugador_idCartaJugador) {
+        if (!Nombre || !Edad || !Pais || !Posicion || !Precio || !idEquipo) {
             return NextResponse.json({ message: "Todos los campos son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.jugador (Nombre, Pais, Posicion, Edad, Estadisticas_idEstadisticas, Estadisticas_idEstadisticas1, Equipo_idEquipo, Equipo_Estadisticas_idEstadisticas, CartaJugador_idCartaJugador) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [Nombre, Pais, Posicion, Edad, Estadisticas_idEstadisticas, Estadisticas_idEstadisticas1, Equipo_idEquipo, Equipo_Estadisticas_idEstadisticas, CartaJugador_idCartaJugador]) as any;
+        const result = await db.query("INSERT INTO mydb.jugador (Nombre, Edad, Pais, Posicion, Precio, idEquipo) VALUES (?, ?, ?, ?, ?, ?)", [Nombre, Edad, Pais, Posicion, Precio, idEquipo]) as any;
 
         console.log("Jugador insertado:", result);
         return NextResponse.json({ message: "Jugador insertado exitosamente", result }, { status: 201 });

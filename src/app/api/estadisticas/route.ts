@@ -1,39 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
 
-interface Estadistica {
+interface Estadisticas {
     idEstadisticas: number;
-    Minutos: string;
-    Goles: string;
-    Asistencias: string;
-    TirosPenalti: string;
-    TirosPenaltiIntentados: string;
-    Disparos: string;
-    DisparosPorteria: string;
-    TarjetasAmarillas: string;
-    TarjetasRojas: string;
-    Toques: string;
-    Entradas: string;
-    Intercepciones: string;
-    Bloqueos: string;
+    idPartido: number;
+    idJornada: number;
+    idJugador: number;
+    idEquipo: number;
+    Minutos: number;
+    Goles: number;
+    Asistencias: number;
+    TirosPenalti: number;
+    TirosPenaltiIntentados: number;
+    Disparos: number;
+    DisparosPorteria: number;
+    TarjetasAmarillas: number;
+    TarjetasRojas: number;
+    Toques: number;
+    Entradas: number;
+    Intercepciones: number;
+    Bloqueos: number;
     GolesEsperados: number;
-    GolesEsperadosSinPenaltis: string;
-    AsistenciasEsperadas: string;
-    AccionesCreadasDeTiro: string;
-    AccionesCreadasDeGol: string;
-    PasesCompletados: string;
-    PasesIntentados: string;
-    PorcentajePasesCompletados: string;
-    PasesProgresivos: string;
-    Controles: string;
-    ConduccionesProgresivas: string;
-    EntradasOfensivas: string;
-    EntradasConExito: string;
+    GolesEsperadosSinPenaltis: number;
+    AsistenciasEsperadas: number;
+    AccionesCreadasDeTiro: number;
+    AccionesCreadasDeGol: number;
+    PasesCompletados: number;
+    PasesIntentados: number;
+    PorcentajePasesCompletados: number;
+    PasesProgresivos: number;
+    Controles: number;
+    ConduccionesProgresivas: number;
+    EntradasOfensivas: number;
+    EntradasConExito: number;
 }
 
 export async function GET() {
     try {
-        const result = await db.query("SELECT * FROM mydb.estadisticas") as Estadistica[];
+        const result = await db.query("SELECT * FROM mydb.estadisticas") as Estadisticas[];
         if (!result.length) {
             console.log("No se encontraron estadísticas");
             return NextResponse.json({ message: "No se encontraron estadísticas" }, { status: 404 });
@@ -48,14 +52,44 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     try {
-        const { Minutos, Goles, Asistencias, TirosPenalti, TirosPenaltiIntentados, Disparos, DisparosPorteria, TarjetasAmarillas, TarjetasRojas, Toques, Entradas, Intercepciones, Bloqueos, GolesEsperados, GolesEsperadosSinPenaltis, AsistenciasEsperadas, AccionesCreadasDeTiro, AccionesCreadasDeGol, PasesCompletados, PasesIntentados, PorcentajePasesCompletados, PasesProgresivos, Controles, ConduccionesProgresivas, EntradasOfensivas, EntradasConExito } = await req.json();
+        const {
+            idPartido, idJornada, idJugador, idEquipo,
+            Minutos, Goles, Asistencias, TirosPenalti, TirosPenaltiIntentados,
+            Disparos, DisparosPorteria, TarjetasAmarillas, TarjetasRojas, Toques,
+            Entradas, Intercepciones, Bloqueos, GolesEsperados, GolesEsperadosSinPenaltis,
+            AsistenciasEsperadas, AccionesCreadasDeTiro, AccionesCreadasDeGol, PasesCompletados,
+            PasesIntentados, PorcentajePasesCompletados, PasesProgresivos, Controles,
+            ConduccionesProgresivas, EntradasOfensivas, EntradasConExito
+        } = await req.json();
 
-        const result = await db.query("INSERT INTO mydb.estadisticas (Minutos, Goles, Asistencias, TirosPenalti, TirosPenaltiIntentados, Disparos, DisparosPorteria, TarjetasAmarillas, TarjetasRojas, Toques, Entradas, Intercepciones, Bloqueos, GolesEsperados, GolesEsperadosSinPenaltis, AsistenciasEsperadas, AccionesCreadasDeTiro, AccionesCreadasDeGol, PasesCompletados, PasesIntentados, PorcentajePasesCompletados, PasesProgresivos, Controles, ConduccionesProgresivas, EntradasOfensivas, EntradasConExito) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [Minutos, Goles, Asistencias, TirosPenalti, TirosPenaltiIntentados, Disparos, DisparosPorteria, TarjetasAmarillas, TarjetasRojas, Toques, Entradas, Intercepciones, Bloqueos, GolesEsperados, GolesEsperadosSinPenaltis, AsistenciasEsperadas, AccionesCreadasDeTiro, AccionesCreadasDeGol, PasesCompletados, PasesIntentados, PorcentajePasesCompletados, PasesProgresivos, Controles, ConduccionesProgresivas, EntradasOfensivas, EntradasConExito]) as any;
+        if (!idPartido || !idJornada || !idJugador || !idEquipo) {
+            return NextResponse.json({ message: "idPartido, idJornada, idJugador e idEquipo son requeridos" }, { status: 400 });
+        }
 
-        console.log("Estadística insertada:", result);
-        return NextResponse.json({ message: "Estadística insertada exitosamente", result }, { status: 201 });
+        const result = await db.query(`
+            INSERT INTO mydb.estadisticas (
+                idPartido, idJornada, idJugador, idEquipo,
+                Minutos, Goles, Asistencias, TirosPenalti, TirosPenaltiIntentados,
+                Disparos, DisparosPorteria, TarjetasAmarillas, TarjetasRojas, Toques,
+                Entradas, Intercepciones, Bloqueos, GolesEsperados, GolesEsperadosSinPenaltis,
+                AsistenciasEsperadas, AccionesCreadasDeTiro, AccionesCreadasDeGol, PasesCompletados,
+                PasesIntentados, PorcentajePasesCompletados, PasesProgresivos, Controles,
+                ConduccionesProgresivas, EntradasOfensivas, EntradasConExito
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            idPartido, idJornada, idJugador, idEquipo,
+            Minutos, Goles, Asistencias, TirosPenalti, TirosPenaltiIntentados,
+            Disparos, DisparosPorteria, TarjetasAmarillas, TarjetasRojas, Toques,
+            Entradas, Intercepciones, Bloqueos, GolesEsperados, GolesEsperadosSinPenaltis,
+            AsistenciasEsperadas, AccionesCreadasDeTiro, AccionesCreadasDeGol, PasesCompletados,
+            PasesIntentados, PorcentajePasesCompletados, PasesProgresivos, Controles,
+            ConduccionesProgresivas, EntradasOfensivas, EntradasConExito
+        ]) as any;
+
+        console.log("Estadísticas insertadas:", result);
+        return NextResponse.json({ message: "Estadísticas insertadas exitosamente", result }, { status: 201 });
     } catch (error) {
-        console.error("Error insertando estadística:", error);
-        return NextResponse.json({ message: "Error insertando estadística", error }, { status: 500 });
+        console.error("Error insertando estadísticas:", error);
+        return NextResponse.json({ message: "Error insertando estadísticas", error }, { status: 500 });
     }
 }

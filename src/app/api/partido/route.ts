@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
 
 interface Partido {
-    idPartidos: number;
-    Fecha: string;
-    Jornada_idJornada: number;
-    Estadisticas_idEstadisticas: number;
+    idPartido: number;
+    idJornada: number;
+    idEquipoLocal: number;
+    idEquipoVisitante: number;
 }
 
 export async function GET() {
     try {
-        const result = await db.query("SELECT * FROM mydb.partidos") as Partido[];
+        const result = await db.query("SELECT * FROM mydb.partido") as Partido[];
         if (!result.length) {
             console.log("No se encontraron partidos");
             return NextResponse.json({ message: "No se encontraron partidos" }, { status: 404 });
@@ -25,13 +25,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     try {
-        const { Fecha, Jornada_idJornada, Estadisticas_idEstadisticas } = await req.json();
+        const { idJornada, idEquipoLocal, idEquipoVisitante } = await req.json();
 
-        if (!Fecha || !Jornada_idJornada || !Estadisticas_idEstadisticas) {
-            return NextResponse.json({ message: "Fecha, Jornada_idJornada y Estadisticas_idEstadisticas son requeridos" }, { status: 400 });
+        if (!idJornada || !idEquipoLocal || !idEquipoVisitante) {
+            return NextResponse.json({ message: "Todos los campos son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.partidos (Fecha, Jornada_idJornada, Estadisticas_idEstadisticas) VALUES (?, ?, ?)", [Fecha, Jornada_idJornada, Estadisticas_idEstadisticas]) as any;
+        const result = await db.query("INSERT INTO mydb.partido (idJornada, idEquipoLocal, idEquipoVisitante) VALUES (?, ?, ?)", [idJornada, idEquipoLocal, idEquipoVisitante]) as any;
 
         console.log("Partido insertado:", result);
         return NextResponse.json({ message: "Partido insertado exitosamente", result }, { status: 201 });
