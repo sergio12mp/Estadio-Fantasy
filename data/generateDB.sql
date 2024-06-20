@@ -199,17 +199,18 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Plantilla` (
 ENGINE = InnoDB;
 
 
--- -----------------------------------------------------
--- Table `mydb`.`Objetos`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`Objetos` ;
+  -- -----------------------------------------------------
+  -- Table `mydb`.`Objetos`
+  -- -----------------------------------------------------
+  DROP TABLE IF EXISTS `mydb`.`Objetos` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`Objetos` (
-  `idObjetos` INT NOT NULL AUTO_INCREMENT,
-  `Nombre` VARCHAR(45) NULL,
-  `Precio` INT NULL,
-  PRIMARY KEY (`idObjetos`))
-ENGINE = InnoDB;
+  CREATE TABLE IF NOT EXISTS `mydb`.`Objetos` (
+    `idObjetos` INT NOT NULL AUTO_INCREMENT,
+    `Nombre` VARCHAR(45) NULL,
+    `Precio` INT NULL,
+    `Descripcion` VARCHAR(200) NULL,
+    PRIMARY KEY (`idObjetos`))
+  ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
