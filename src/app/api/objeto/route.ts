@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
+import { Objetos } from "@/libs/data";
 
-interface Objetos {
-    idObjetos: number;
-    Nombre: string;
-    Precio: number;
-    Descripcion: string;
-}
 
 export async function GET() {
     try {
