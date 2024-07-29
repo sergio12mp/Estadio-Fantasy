@@ -167,7 +167,10 @@ ENGINE = InnoDB;
 DROP TABLE IF EXISTS `mydb`.`Manager` ;
 
 CREATE TABLE IF NOT EXISTS `mydb`.`Manager` (
-  `idManager` INT NOT NULL,
+  `idManager`  INT NOT NULL AUTO_INCREMENT,
+  `Nombre` VARCHAR(45) NULL,
+  `idGoogle` VARCHAR(100) NULL,
+  `Email` VARCHAR(100) NULL,
   PRIMARY KEY (`idManager`))
 ENGINE = InnoDB;
 

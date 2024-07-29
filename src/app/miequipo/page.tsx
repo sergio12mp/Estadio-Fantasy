@@ -1,6 +1,18 @@
 import { FooterHome } from "@/components/footer";
+import { getServerSession } from "next-auth";
+import { GetDefensas } from "@/libs/defensas";
 
-export default function Miequipo() {
+export default async function Miequipo() {
+
+    const session = await getServerSession();
+    console.log(session);
+    const sessionUser = session?.user;
+
+    const defensas = await GetDefensas();
+
+
+
+
     return (
 <>
         <div className="containerMidBlue" >
