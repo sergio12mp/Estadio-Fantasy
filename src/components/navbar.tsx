@@ -81,6 +81,17 @@ function OffcanvasExample() {
     );
 }
 
-
+interface NavbarHomeProps {
+    userID: string;
+  }
+  
+  export const NavbarHome: React.FC<NavbarHomeProps> = ({ userID }) => {
+    return (
+      <nav>
+        <h1>Welcome, User {userID}</h1>
+        {/* Rest of your navigation content */}
+      </nav>
+    );
+  };
 
 export default OffcanvasExample;

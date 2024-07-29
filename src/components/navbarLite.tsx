@@ -7,7 +7,7 @@ import { signIn } from "next-auth/react";
 
 export function NavbarLite() {
     const handleSignIn = async () => {
-        await signIn("google", { callbackUrl: "/home" });
+        await signIn("google", { callbackUrl: "/miequipo" });
     };
 
     return (

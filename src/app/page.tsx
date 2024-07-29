@@ -8,6 +8,7 @@ import Figure from "react-bootstrap/Figure";
 export default async function Home() {
   return (
     <>
+      
       <NavbarLite></NavbarLite>
       <Carousel>
         <Carousel.Item>
