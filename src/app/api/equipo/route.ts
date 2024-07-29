@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
+import { Equipo } from "@/libs/data";
 
-interface Equipo {
-    idEquipo: number;
-    Nombre: string;
-}
 
 export async function GET() {
     try {

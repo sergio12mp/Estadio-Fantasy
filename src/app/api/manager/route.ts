@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
-
-interface Manager {
-    idManager: number;
-}
+import { Manager } from "@/libs/data";
 
 export async function GET() {
     try {

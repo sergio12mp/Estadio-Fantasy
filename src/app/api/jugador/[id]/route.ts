@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
+import { Jugador } from "@/libs/data";
 
-interface Jugador {
-    idJugador: number;
-    Nombre: string;
-    Edad: string;
-    Pais: string;
-    Posicion: string;
-    Precio: number;
-    idEquipo: number;
-}
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
