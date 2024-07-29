@@ -50,7 +50,7 @@ export default function Perfil() {
                                         <div>
                                             <p className="mb-1 h5">{"reviewsScore.toFixed(2)"}</p>
                                             <p className="small text-muted mb-0"> Valoracion media
-                                            {/*
+                                                {/*
                                                 {props.showReviewButton ?
                                                     <a href={`/usuario}/valorar`}>
                                                         <button
@@ -61,7 +61,7 @@ export default function Perfil() {
                                                         </button></a>
                                                     :
                                                     <></>
-                                                }*/} 
+                                                }*/}
                                             </p>
                                         </div>
                                     </div>
