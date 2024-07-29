@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
-
-interface PlantillaJugadorObjeto {
-    idPlantilla: number;
-    idJugador: number;
-    idObjetos: number;
-}
+import { PlantillaJugadorObjeto } from "@/libs/data";
 
 export async function GET() {
     try {

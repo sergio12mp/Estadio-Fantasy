@@ -1,6 +1,6 @@
 import { FooterHome } from "@/components/footer";
 import { getServerSession } from "next-auth";
-import { GetDefensas } from "@/libs/defensas";
+import { GetDefensas } from "@/database/players";
 
 export default async function Miequipo() {
 

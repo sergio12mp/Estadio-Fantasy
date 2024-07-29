@@ -1,39 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
-
-interface Estadisticas {
-    idEstadisticas: number;
-    idPartido: number;
-    idJornada: number;
-    idJugador: number;
-    idEquipo: number;
-    Minutos: number;
-    Goles: number;
-    Asistencias: number;
-    TirosPenalti: number;
-    TirosPenaltiIntentados: number;
-    Disparos: number;
-    DisparosPorteria: number;
-    TarjetasAmarillas: number;
-    TarjetasRojas: number;
-    Toques: number;
-    Entradas: number;
-    Intercepciones: number;
-    Bloqueos: number;
-    GolesEsperados: number;
-    GolesEsperadosSinPenaltis: number;
-    AsistenciasEsperadas: number;
-    AccionesCreadasDeTiro: number;
-    AccionesCreadasDeGol: number;
-    PasesCompletados: number;
-    PasesIntentados: number;
-    PorcentajePasesCompletados: number;
-    PasesProgresivos: number;
-    Controles: number;
-    ConduccionesProgresivas: number;
-    EntradasOfensivas: number;
-    EntradasConExito: number;
-}
+import  { Estadisticas } from "@/libs/data";
 
 export async function GET() {
     try {

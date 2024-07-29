@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
+import { Participaciones } from "@/libs/data";
 
-interface Participaciones {
-    idManager: number;
-    idLigas: number;
-}
 
 export async function GET() {
     try {

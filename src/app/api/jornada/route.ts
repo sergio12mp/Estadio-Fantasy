@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
-
-interface Jornada {
-    idJornada: number;
-    Nombre: string;
-    idTemporada: number;
-}
+import { Jornada } from "@/libs/data";
 
 export async function GET() {
     try {
