@@ -21,14 +21,14 @@ const Jugadores: React.FC = () => {
 
         fetchJugadores();
     }, []);
-    /*
-        useEffect(() => {
-            setFilteredJugadores(
-                jugadores.filter((jugador) =>
-                    jugador.Nombre.toLowerCase().includes(query.toLowerCase())
-                )
-            );
-        }, [query, jugadores]);*/
+
+    useEffect(() => {
+        setFilteredJugadores(
+            jugadores.filter((jugador) =>
+                jugador.Nombre.toLowerCase().includes(query.toLowerCase())
+            )
+        );
+    }, [query, jugadores]);
 
     return (
         <div>
@@ -58,6 +58,7 @@ const Jugadores: React.FC = () => {
                 <FooterHome />
             </footer>
         </div>
+
     );
 };
 
