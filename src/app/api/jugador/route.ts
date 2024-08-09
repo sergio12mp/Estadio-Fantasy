@@ -26,6 +26,21 @@ export async function GET() {
     }
 }
 
+export async function GETporPrecio(req: NextRequest) {
+    try {
+        const result = await db.query("SELECT * FROM mydb.jugador WHERE Precio > ") as Jugador[];
+        if (!result.length) {
+            console.log("No se encontraron jugadores");
+            return NextResponse.json({ message: "No se encontraron jugadores" }, { status: 404 });
+        }
+        console.log(result);
+        return NextResponse.json({ message: "Jugadores encontrados", result });
+    } catch (error) { 
+        console.error("Error al obtener los jugadores:", error);
+        return NextResponse.json({ message: "Error al obtener los jugadores", error }, { status: 500 });
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { Nombre, Edad, Pais, Posicion, Precio, idEquipo } = await req.json();

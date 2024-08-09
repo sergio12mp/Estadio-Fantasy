@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { FooterHome } from '@/components/footer';
 import PlayerSelection from '@/components/playerSelection';
-import { NavbarLite } from '@/components/navbarLite';
 
 const Page: React.FC = () => {
     const [alineacion, setAlineacion] = useState("1-4-3-3");
@@ -71,7 +70,6 @@ const Page: React.FC = () => {
 
     return (
         <>
-
             <div className="containerMidBlue">
                 <h1>Selección de Jugadores y Alineaciones</h1>
 

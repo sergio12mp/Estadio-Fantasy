@@ -7,7 +7,7 @@ export default function Perfil() {
     //const ligas = props.ligas.map(liga => Liga.FromJSON(liga));
     //const equipoDeCadaJornada = props.equipoDeCadaJornada.map(equipoDeCadaJornada => EquipoDeCadaJornada.FromJSON(equipoDeCadaJornada));
     return (
-        <div className="gradient-custom-2" style={{ backgroundColor: "#0000" }}>
+        <><div className="gradient-custom-2" style={{ backgroundColor: "#0000" }}>
             <div className="py-5 h-100 container">
                 <div className="justify-content-center align-items-center h-100 row">
                     <div className="col-lg-9 col-xl-7">
@@ -31,7 +31,7 @@ export default function Perfil() {
                                     <div className="px-3">
                                         <div>
                                             <p className="mb-1 h5">{"bids.length"}</p>
-                                            <p><a href={`/usuario/pujas`} className="small text-muted mb-0"   >Pujas realizadas</a></p>
+                                            <p><a href={`/usuario/pujas`} className="small text-muted mb-0">Pujas realizadas</a></p>
                                         </div>
                                     </div>
                                     <div className="px-3">
@@ -51,17 +51,17 @@ export default function Perfil() {
                                             <p className="mb-1 h5">{"reviewsScore.toFixed(2)"}</p>
                                             <p className="small text-muted mb-0"> Valoracion media
                                                 {/*
-                                                {props.showReviewButton ?
-                                                    <a href={`/usuario}/valorar`}>
-                                                        <button
-                                                            className="button btn btn-outline-dark"
-                                                            style={{ height: "36px", overflow: "visible" }}
-                                                        >
-                                                            Valorar
-                                                        </button></a>
-                                                    :
-                                                    <></>
-                                                }*/}
+    {props.showReviewButton ?
+        <a href={`/usuario}/valorar`}>
+            <button
+                className="button btn btn-outline-dark"
+                style={{ height: "36px", overflow: "visible" }}
+            >
+                Valorar
+            </button></a>
+        :
+        <></>
+    }*/}
                                             </p>
                                         </div>
                                     </div>
@@ -69,13 +69,13 @@ export default function Perfil() {
                             </div>
                             <div className="card-body text-black p-4">
                                 <div className="row">
-                                    {/* Aquí puedes agregar contenido para las subastas recientes 
-                                    {props.auctions.length === 0 ? (
-                                        <h4>No has hecho subastas todavia</h4>
-                                    ) : (
-                                        <AuctionList auctions={auctions.map(auction => auction.ToJSON())}></AuctionList>
-                                    )}
-                                    */}
+                                    {/* Aquí puedes agregar contenido para las subastas recientes
+    {props.auctions.length === 0 ? (
+        <h4>No has hecho subastas todavia</h4>
+    ) : (
+        <AuctionList auctions={auctions.map(auction => auction.ToJSON())}></AuctionList>
+    )}
+    */}
 
                                 </div>
                             </div>
@@ -83,6 +83,9 @@ export default function Perfil() {
                     </div>
                 </div>
             </div>
-        </div>
+
+        </div><footer>
+                <FooterHome />
+            </footer></>
     );
 }
