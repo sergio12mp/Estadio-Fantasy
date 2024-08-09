@@ -2,22 +2,8 @@
 import React, { useState } from 'react';
 import { FooterHome } from '@/components/footer';
 import PlayerSelection from '@/components/playerSelection';
-import { NavbarLite } from '@/components/navbarLite';
-
-
-import { GetDefensas } from "@/database/players";
-import { getServerSession } from 'next-auth';
-
-
-
-
 
 const Page: React.FC = () => {
-    //const session = await async getServerSession();
-    //console.log(session);
-    //const sessionUser = session?.user;
-
-    const defensas = await GetDefensas();
     const [alineacion, setAlineacion] = useState("1-4-3-3");
 
     const handleAlineacionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -84,7 +70,6 @@ const Page: React.FC = () => {
 
     return (
         <>
-
             <div className="containerMidBlue">
                 <h1>Selección de Jugadores y Alineaciones</h1>
 
