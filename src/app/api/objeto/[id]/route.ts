@@ -59,3 +59,37 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
         return NextResponse.json({ message: "Error eliminando objeto", error }, { status: 500 });
     }
 }
+
+export async function PUNTUAR(req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+        const result = await db.query("SELECT * FROM mydb.objeto WHERE idObjeto = ?", [params.id]) as Objeto[];
+        if (!result.length) {
+            console.log(`No se encontró el objeto con ID ${params.id}`);
+            return NextResponse.json({ message: "No se encontró el objeto" }, { status: 404 });
+        }
+        let PUNTUACION = 1;
+
+        if(params.id=="1"){//Bota de Oro
+            PUNTUACION = 2;
+        }else if(params.id=="2"){//Mente Brillante
+            PUNTUACION = 3;
+        }else if(params.id=="3"){//Manos magicas
+            PUNTUACION = 4;
+        } else if(params.id=="4"){//Escudo Real
+            PUNTUACION = 5;
+        }
+        
+
+
+
+
+        console.log(result);
+
+
+
+        return NextResponse.json({ message: "Objeto encontrado", result });
+    } catch (error) {
+        console.error("Error puntuando objeto:", error);
+        return NextResponse.json({ message: "Error puntuando objeto", error }, { status: 500 });
+    }
+}

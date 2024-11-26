@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
         const rows: any[] = [];
         const processCSV = new Promise<void>((resolve, reject) => {
             // Ajusta la ruta según tu configuración
-            createReadStream('C:/Users/Sergio/Desktop/prV3/v3/data/partidosShort.csv')
+            createReadStream('C:/Users/sergio/Desktop/TFG/frontendEF/data/partidosShort.csv')
                 .pipe(csv())
                 .on('data', (row) => {
                     rows.push(row);
@@ -108,8 +108,6 @@ export async function POST(req: NextRequest) {
                 let idEquipo = equiposMap.get(equipoNombre);
                 console.log('idEquipo:', idEquipo);
                 if (!idEquipo) {
-                    const query = 'SELECT idEquipo FROM Equipo WHERE Nombre = ?';
-
                     try {
                         const [existingEquipo]: any[] = await db.query(query, [equipoNombre]);
                         console.log('existingEquipo:', existingEquipo);
