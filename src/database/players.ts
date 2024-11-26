@@ -1,7 +1,18 @@
 "use server";
 import {db} from "@/libs/mysql";
 
-export async function GetDefensas() {
+export async function GetEquipos() {
+    const [rows]: any = await db.query("SELECT * FROM mydb.equipo");
+    console.log("EQUIPOS");
+    
+    // Transforma las filas en objetos planos
+    const plainRows = JSON.parse(JSON.stringify(rows));
+    
+    console.log(plainRows);
+    return plainRows;
+}
+
+export  async function GetDefensas() {
   const [rows]: any = await db.query("SELECT * FROM mydb.jugador where Posicion = 'RB' or Posicion = 'CB'  or Posicion = 'LB'");
   console.log(rows);
   return rows;

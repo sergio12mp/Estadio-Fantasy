@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
+import { NextApiRequest, NextApiResponse } from 'next';
+import { GetDefensas } from "@/database/players";
+import { GetAtacantes } from "@/database/players";
+import {GetMediocampistas} from "@/database/players";
+import {GetPorteros} from "@/database/players";
 
 interface Jugador {
     idJugador: number;
@@ -56,5 +61,62 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error("Error insertando jugador:", error);
         return NextResponse.json({ message: "Error insertando jugador", error }, { status: 500 });
+    }
+}
+
+export  async function handlerPorteros(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method === 'GET') {
+        try {
+            const porteros = await GetPorteros();
+            res.status(200).json(porteros);
+        } catch (error) {
+            console.error('Error fetching porteros:', error);
+            res.status(500).json({ error: 'Error fetching porteros' });
+        }
+    } else {
+        res.setHeader('Allow', ['GET']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
+    }
+}
+export  async function handlerDefensas(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method === 'GET') {
+        try {
+            const porteros = await GetDefensas();
+            res.status(200).json(porteros);
+        } catch (error) {
+            console.error('Error fetching porteros:', error);
+            res.status(500).json({ error: 'Error fetching porteros' });
+        }
+    } else {
+        res.setHeader('Allow', ['GET']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
+    }
+}
+export  async function handlerCentrocampistas(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method === 'GET') {
+        try {
+            const porteros = await GetMediocampistas();
+            res.status(200).json(porteros);
+        } catch (error) {
+            console.error('Error fetching porteros:', error);
+            res.status(500).json({ error: 'Error fetching porteros' });
+        }
+    } else {
+        res.setHeader('Allow', ['GET']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
+    }
+}
+export  async function handlerAtacantes(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method === 'GET') {
+        try {
+            const porteros = await GetAtacantes();
+            res.status(200).json(porteros);
+        } catch (error) {
+            console.error('Error fetching porteros:', error);
+            res.status(500).json({ error: 'Error fetching porteros' });
+        }
+    } else {
+        res.setHeader('Allow', ['GET']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }

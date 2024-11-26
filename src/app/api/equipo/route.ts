@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/libs/mysql";
 import { Equipo } from "@/libs/data";
+import { NextApiRequest, NextApiResponse } from 'next';
+import { GetEquipos } from '@/database/players';
 
 
 export async function GET() {
@@ -33,5 +35,25 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error("Error insertando equipo:", error);
         return NextResponse.json({ message: "Error insertando equipo", error }, { status: 500 });
+    }
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method === 'GET') {
+        try {
+            const equipos = await GetEquipos();
+            // Asegúrate de que equipos sea un array
+            if (!Array.isArray(equipos)) {
+                throw new Error('La respuesta no es un array.');
+            }
+            
+            res.status(200).json(equipos);
+        } catch (error) {
+            console.error('Error fetching equipos:', error);
+            res.status(500).json({ error: 'Error fetching equipos' });
+        }
+    } else {
+        res.setHeader('Allow', ['GET']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
