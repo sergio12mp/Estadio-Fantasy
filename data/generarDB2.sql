@@ -177,6 +177,8 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Manager` (
   `Nombre` VARCHAR(45) NULL,
   `idGoogle` VARCHAR(100) NULL,
   `Email` VARCHAR(100) NULL,
+  `oro` INT NOT NULL DEFAULT 0,
+  `balones` INT NOT NULL DEFAULT 0,
   `esAdmin` BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (`idManager`))
 ENGINE = InnoDB;

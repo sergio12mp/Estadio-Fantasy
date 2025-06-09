@@ -149,6 +149,8 @@ DROP TABLE IF EXISTS `mydb`.`Manager` ;
 
 CREATE TABLE IF NOT EXISTS `mydb`.`Manager` (
   `idManager` INT NOT NULL,
+  `oro` INT NOT NULL DEFAULT 0,
+  `balones` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`idManager`))
 ENGINE = InnoDB;
 
