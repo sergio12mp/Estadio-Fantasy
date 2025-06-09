@@ -68,6 +68,8 @@ export interface Manager {
     nombre: string;
     email: string;
     idGoogle: string;
+    oro: number;
+    balones: number;
 }
 
 // Interfaz para la carta de jugador que posee un Manager (devuelta por /api/cartas-manager)
@@ -160,5 +162,25 @@ export async function updateManager(id: number, data: any) {
         body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error("No se pudo actualizar el manager");
+    return res.json();
+}
+
+// Obtener la economía del manager (oro y balones)
+export async function getManagerEconomy(id: number) {
+    const res = await fetch(`/api/manager/economia/${id}`);
+    if (!res.ok) throw new Error("No se pudo obtener la economía del manager");
+    return res.json();
+}
+
+// Actualizar la economía del manager (oro y balones)
+export async function updateManagerEconomy(id: number, oro: number, balones: number) {
+    const res = await fetch(`/api/manager/economia/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ oro, balones }),
+    });
+    if (!res.ok) throw new Error("No se pudo actualizar la economía del manager");
     return res.json();
 }
