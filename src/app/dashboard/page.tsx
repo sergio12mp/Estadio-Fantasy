@@ -12,7 +12,12 @@ export default function DashboardPage() {
   const [guardando, setGuardando] = useState(false);
   const [mensajeFecha, setMensajeFecha] = useState(""); 
   const [procesandoCSV, setProcesandoCSV] = useState(false);
-  const [mensajeCSV, setMensajeCSV] = useState(""); 
+  const [mensajeCSV, setMensajeCSV] = useState("");
+
+  const [currencyManagerId, setCurrencyManagerId] = useState("");
+  const [oro, setOro] = useState("0");
+  const [balones, setBalones] = useState("0");
+  const [mensajeMonedas, setMensajeMonedas] = useState("");
 
   useEffect(() => {
     const cargar = async () => {
@@ -76,6 +81,24 @@ export default function DashboardPage() {
     }
   };
 
+  const agregarMonedas = async () => {
+    setMensajeMonedas("");
+    const res = await fetch("/api/currency", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        managerId: Number(currencyManagerId),
+        deltaOro: Number(oro),
+        deltaBalones: Number(balones),
+      }),
+    });
+    if (res.ok) {
+      setMensajeMonedas("Monedas añadidas");
+    } else {
+      setMensajeMonedas("Error al añadir monedas");
+    }
+  };
+
 
   return (
     // <RequireAdmin>
@@ -123,7 +146,36 @@ export default function DashboardPage() {
               >
                   {procesandoCSV ? "Procesando CSV..." : "Procesar CSV"}
               </button>
-              {mensajeCSV && <p className="mt-3 text-sm text-gray-800">{mensajeCSV}</p>} {/* Añadido text-gray-800 */}
+          {mensajeCSV && <p className="mt-3 text-sm text-gray-800">{mensajeCSV}</p>} {/* Añadido text-gray-800 */}
+          </div>
+
+          <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200 mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">💰 Añadir monedas</h2>
+            <div className="flex flex-wrap gap-2 mb-2">
+              <input
+                type="text"
+                placeholder="ID Manager"
+                value={currencyManagerId}
+                onChange={(e) => setCurrencyManagerId(e.target.value)}
+                className="border px-2 py-1 text-black"
+              />
+              <input
+                type="number"
+                placeholder="Oro"
+                value={oro}
+                onChange={(e) => setOro(e.target.value)}
+                className="border px-2 py-1 text-black"
+              />
+              <input
+                type="number"
+                placeholder="Balones"
+                value={balones}
+                onChange={(e) => setBalones(e.target.value)}
+                className="border px-2 py-1 text-black"
+              />
+              <button onClick={agregarMonedas} className="bg-blue-600 text-white px-3 py-1 rounded">Agregar</button>
+            </div>
+            {mensajeMonedas && <p className="text-sm">{mensajeMonedas}</p>}
           </div>
 
 

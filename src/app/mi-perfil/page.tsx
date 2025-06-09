@@ -6,7 +6,7 @@ import { updateManager } from "@/lib/data";
 import { useEffect, useState } from "react";
 
 export default function MiPerfilPage() {
-  const { user, manager, setManager } = useAuth();
+  const { user, manager, setManager, currency } = useAuth();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState("");
@@ -75,6 +75,13 @@ console.log("manager", manager);
                 ✏️
               </button>
             </div>
+          </div>
+
+          <div className="w-full text-center">
+            <p className="text-sm text-gray-600 mb-1">Monedas</p>
+            <p className="text-md font-medium text-black bg-gray-100 rounded py-1 px-3 inline-block">
+              {currency.oro} oro · {currency.balones} balones
+            </p>
           </div>
 
           {mensaje && <p className="text-sm mt-2 text-gray-700">{mensaje}</p>}

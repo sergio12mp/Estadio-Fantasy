@@ -16,6 +16,8 @@ type AuthContextType = {
   loading: boolean;
   manager: Manager | null;
   setManager: (m: Manager) => void;
+  currency: { oro: number; balones: number };
+  setCurrency: (c: { oro: number; balones: number }) => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,12 +25,15 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   manager: null,
   setManager: () => {},
+  currency: { oro: 0, balones: 0 },
+  setCurrency: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [manager, setManager] = useState<Manager | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState({ oro: 0, balones: 0 });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -53,8 +58,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
   
+  useEffect(() => {
+    const loadCurrency = async () => {
+      if (!manager?.idManager) return;
+      try {
+        const res = await fetch(`/api/currency?managerId=${manager.idManager}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCurrency(data);
+        }
+      } catch (e) {
+        console.error('Error loading currency', e);
+      }
+    };
+    loadCurrency();
+  }, [manager]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, manager, setManager }}>
+    <AuthContext.Provider value={{ user, loading, manager, setManager, currency, setCurrency }}>
       {children}
     </AuthContext.Provider>
   );
