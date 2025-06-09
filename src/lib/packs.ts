@@ -3,6 +3,7 @@ export type PackType = 'jugador' | 'objeto' | 'normal';
 
 export interface PackCard {
   tipo: 'jugador' | 'objeto';
+  nombre: string;
   rareza: Rarity;
 }
 
@@ -20,6 +21,14 @@ const BASE_PROBABILITIES: Record<Rarity, number> = {
   Epica: 0.2,
   Legendaria: 0.1,
 };
+
+const PLAYER_NAMES = ['Jugador A', 'Jugador B', 'Jugador C', 'Jugador D', 'Jugador E'];
+const OBJECT_NAMES = ['Botas mágicas', 'Casco reforzado', 'Guantes dorados', 'Escudo real', 'Poción secreta'];
+
+function nombreAleatorio(lista: string[]): string {
+  const idx = Math.floor(Math.random() * lista.length);
+  return lista[idx];
+}
 
 export const PACK_COSTS = {
   normal: { balones: 100, oro: 10 },
@@ -61,14 +70,36 @@ export function abrirSobre(
 
   if (tipo === 'normal') {
     for (let i = 0; i < 3; i++) {
-      cartas.push({ tipo: 'jugador', rareza: obtenerRareza(probabilidades) });
+      cartas.push({
+        tipo: 'jugador',
+        nombre: nombreAleatorio(PLAYER_NAMES),
+        rareza: obtenerRareza(probabilidades),
+      });
     }
-    cartas.push({ tipo: 'objeto', rareza: obtenerRareza(probabilidades) });
+    cartas.push({
+      tipo: 'objeto',
+      nombre: nombreAleatorio(OBJECT_NAMES),
+      rareza: obtenerRareza(probabilidades),
+    });
     const aleatorio = Math.random() < 0.5 ? 'jugador' : 'objeto';
-    cartas.push({ tipo: aleatorio, rareza: obtenerRareza(probabilidades) });
+    cartas.push({
+      tipo: aleatorio,
+      nombre:
+        aleatorio === 'jugador'
+          ? nombreAleatorio(PLAYER_NAMES)
+          : nombreAleatorio(OBJECT_NAMES),
+      rareza: obtenerRareza(probabilidades),
+    });
   } else {
     for (let i = 0; i < 5; i++) {
-      cartas.push({ tipo, rareza: obtenerRareza(probabilidades) });
+      cartas.push({
+        tipo,
+        nombre:
+          tipo === 'jugador'
+            ? nombreAleatorio(PLAYER_NAMES)
+            : nombreAleatorio(OBJECT_NAMES),
+        rareza: obtenerRareza(probabilidades),
+      });
     }
   }
 
