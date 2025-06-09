@@ -6,7 +6,7 @@ import SignOutButton from "./SignOutButton";
 import LoginButton from "./LoginButton";
 
 export default function NavBar() {
-  const { user } = useAuth();
+  const { user, currency } = useAuth();
 
   return (
     <nav className="bg-blue-600 text-white p-4">
@@ -22,17 +22,15 @@ export default function NavBar() {
 
           {user ? (
             <>
-            <Link href="/mi-perfil" className="hover:underline">Mi Perfil</Link>
-
-              <Link href="/dashboard" className="hover:underline">
-                Dashboard
-              </Link>
-              <Link href="/mi-equipo" className="hover:underline">
-                Mi Equipo
-              </Link>
-              <Link href="/profile" className="hover:underline">
-                Perfil
-              </Link>
+              <span className="mr-2">
+                {user.displayName} - {currency.oro} oro · {currency.balones} balones
+              </span>
+              <Link href="/sobres" className="hover:underline">Abrir Sobres</Link>
+              <Link href="/album" className="hover:underline">Álbum</Link>
+              <Link href="/mi-perfil" className="hover:underline">Mi Perfil</Link>
+              <Link href="/dashboard" className="hover:underline">Dashboard</Link>
+              <Link href="/mi-equipo" className="hover:underline">Mi Equipo</Link>
+              <Link href="/profile" className="hover:underline">Perfil</Link>
               <SignOutButton />
             </>
           ) : (
