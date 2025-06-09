@@ -35,22 +35,17 @@ export async function POST(req: NextRequest) {
         const idJugador = player.idJugador;
 
         console.log(`DEBUG: Verificando carta Comun para Manager: ${idManager}, Jugador: ${idJugador}`);
-        
+
         // *** CORRECCIÓN CLAVE AQUÍ: DESESTRUCTURACIÓN SEGURA ***
-        // Usamos una desestructuración que asigna `rows` y `fields`
-        // Si db.query devuelve un solo array (las filas), `rows` será el array.
-        // Si devuelve [rows, fields], `rows` será el primer elemento del array.
-        // Si devuelve undefined/null, la desestructuración por defecto lo convertirá en un array vacío para evitar el error.
-        const [existingCardsRows = []]: [any[]] = await db.query( // [any[]] para tipado explícito
+        const queryResult = await db.query(
           'SELECT idCartaJugador FROM CartaJugador WHERE Manager_idManager = ? AND Jugador_idJugador = ? AND rareza = ?',
           [idManager, idJugador, 'Comun']
         );
-        // Ahora `existingCardsRows` es directamente el array de filas, garantizado.
-        // La línea que causaba el error (`const existingCards = existingCardsResult[0] as any[];`) se elimina/simplifica.
+        const existingCardsRows = Array.isArray(queryResult[0]) ? queryResult[0] : queryResult;
 
-        console.log(`DEBUG: Resultado de búsqueda de carta existente (${idManager}, ${idJugador}):`, existingCardsRows); // Cambiado a existingCardsRows
+        console.log(`DEBUG: Resultado de búsqueda de carta existente (${idManager}, ${idJugador}):`, existingCardsRows);
 
-        if (existingCardsRows.length === 0) { // Ahora comprobamos la longitud del array de filas directamente
+        if (Array.isArray(existingCardsRows) && existingCardsRows.length === 0) {
           console.log(`INFO: Carta Comun NO existe. Añadiendo a lote: Manager: ${idManager}, Jugador: ${idJugador}`);
           valuesToInsert.push(`(${idManager}, ${idJugador}, 'Comun')`);
           cardsCreatedCount++;
@@ -64,7 +59,7 @@ export async function POST(req: NextRequest) {
         for (let i = 0; i < valuesToInsert.length; i += batchSize) {
           const batch = valuesToInsert.slice(i, i + batchSize);
           const insertQuery = `INSERT INTO CartaJugador (Manager_idManager, Jugador_idJugador, rareza) VALUES ${batch.join(',')}`;
-          
+
           try {
             console.log(`DEBUG: Ejecutando INSERT lote (${batch.length} items):`, insertQuery.substring(0, 200) + '...');
             await db.query(insertQuery);
@@ -84,9 +79,9 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`INFO: Proceso de llenado de cartas comunes completado. Total de cartas creadas: ${cardsCreatedCount}`);
-    return NextResponse.json({ 
-      message: "Proceso de llenado de cartas comunes completado.", 
-      cardsCreated: cardsCreatedCount 
+    return NextResponse.json({
+      message: "Proceso de llenado de cartas comunes completado.",
+      cardsCreated: cardsCreatedCount
     }, { status: 200 });
 
   } catch (error: any) {
