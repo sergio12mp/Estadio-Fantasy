@@ -95,6 +95,9 @@ export default function MiEquipo() {
   const [jornadasDisponibles, setJornadasDisponibles] = useState<number[]>([]);
   const [selectedJornada, setSelectedJornada] = useState<number | null>(null);
 
+  const isEditingAllowed =
+    selectedJornada !== null && selectedJornada === idJornadaActual;
+
   const currentFormation = useMemo(() => {
     return FORMACIONES.find(f => f.label === selectedFormationLabel);
   }, [selectedFormationLabel]);
@@ -157,6 +160,67 @@ export default function MiEquipo() {
       fetchManagerData();
     }
   }, [manager]);
+
+  useEffect(() => {
+    const fetchJornadas = async () => {
+      if (idJornadaActual === null) return;
+      try {
+        const res = await fetch('/api/jornada');
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.result)) {
+          const ids = data.result
+            .map((j: any) => j.idJornada)
+            .filter((id: number) => id <= idJornadaActual)
+            .sort((a: number, b: number) => a - b);
+          setJornadasDisponibles(ids);
+          setSelectedJornada((prev) => prev ?? idJornadaActual);
+        }
+      } catch (err) {
+        console.error('Error al obtener jornadas:', err);
+      }
+    };
+
+    fetchJornadas();
+  }, [idJornadaActual]);
+
+  useEffect(() => {
+    const fetchPlantilla = async () => {
+      if (!manager || selectedJornada === null) return;
+      try {
+        const resp = await fetch(
+          `/api/plantilla?managerId=${manager.idManager}&idJornada=${selectedJornada}`
+        );
+        if (!resp.ok) {
+          setPlantillaActual(new Map());
+          return;
+        }
+        const data = await resp.json();
+        const jugadores = Array.isArray(data.jugadoresEnCampo)
+          ? data.jugadoresEnCampo
+          : [];
+        const map = new Map<number, CartaJugadorEnPlantilla>();
+        jugadores.forEach((jug: any) => {
+          if (jug) {
+            map.set(jug.posicionEnPlantilla, {
+              ...jug,
+              objetosEquipados: jug.objetosEquipados || [],
+              maxObjetosSlots: obtenerSlotsObjetoPorRareza(
+                jug.Rareza as 'Común' | 'Raro' | 'Épico' | 'Legendario'
+              ),
+            });
+          }
+        });
+        if (data.plantilla && data.plantilla.Alineacion) {
+          setSelectedFormationLabel(data.plantilla.Alineacion);
+        }
+        setPlantillaActual(map);
+      } catch (err) {
+        console.error('Error al cargar plantilla:', err);
+      }
+    };
+
+    fetchPlantilla();
+  }, [manager, selectedJornada]);
 
   const handleOpenPlayerSelectionModal = useCallback((
     posicion: PosicionFrontend,
@@ -290,8 +354,13 @@ export default function MiEquipo() {
       return;
     }
 
-    if (idJornadaActual === null) {
+    if (selectedJornada === null || idJornadaActual === null) {
       alert("No se pudo obtener la jornada actual. Inténtalo de nuevo.");
+      return;
+    }
+
+    if (!isEditingAllowed) {
+      alert("Solo se puede editar la jornada actual.");
       return;
     }
 
@@ -306,7 +375,7 @@ export default function MiEquipo() {
         managerId: manager.idManager,
         jugadoresParaGuardar: plantillaParaGuardar,
         alineacionLabel: selectedFormationLabel,
-        idJornada: idJornadaActual,
+        idJornada: selectedJornada,
       });
 
       const response = await fetch('/api/plantilla', {
@@ -318,7 +387,7 @@ export default function MiEquipo() {
           managerId: manager.idManager,
           jugadoresParaGuardar: plantillaParaGuardar,
           alineacionLabel: selectedFormationLabel,
-          idJornada: idJornadaActual,
+          idJornada: selectedJornada,
         }),
       });
 
@@ -362,16 +431,17 @@ export default function MiEquipo() {
                         {currentPlayer ? (
                             <PlayerCard
                                 carta={currentPlayer}
-                                onClick={() =>
+                                onClick={isEditingAllowed ? () =>
                                     handleOpenPlayerSelectionModal(posicionFrontend, currentIndex)
-                                }
-                                onEquipObject={() => {
+                                : undefined}
+                                onEquipObject={isEditingAllowed ? () => {
                                     handleOpenObjectSelectionModal(currentPlayer, currentIndex);
-                                }}
+                                } : undefined}
                             />
                         ) : (
                             <div className="flex flex-col items-center">
                                 <span className="text-lg mb-2">Vacío ({posicionFrontend})</span>
+                                {isEditingAllowed && (
                                 <button
                                     className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400"
                                     onClick={() =>
@@ -380,6 +450,7 @@ export default function MiEquipo() {
                                 >
                                     + Seleccionar
                                 </button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -395,7 +466,7 @@ export default function MiEquipo() {
         });
 
         return rows;
-    }, [plantillaActual, currentFormation, handleOpenPlayerSelectionModal, handleOpenObjectSelectionModal]);
+    }, [plantillaActual, currentFormation, handleOpenPlayerSelectionModal, handleOpenObjectSelectionModal, isEditingAllowed]);
   // ESTOS RETURNS CONDICIONALES DEBEN IR DESPUÉS DE LA DEFINICIÓN DE TODOS LOS HOOKS.
   if (authLoading || isLoading) {
     return <div className="text-center text-white text-xl mt-8">Cargando equipo...</div>;
@@ -417,24 +488,40 @@ export default function MiEquipo() {
 
         <div className="max-w-7xl mx-auto bg-gray-800 p-6 rounded-lg shadow-xl">
           <div className="mb-6 flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-4 mb-4 md:mb-0">
-              <label htmlFor="alineacion-select" className="text-lg">Alineación:</label>
-              <select
-                id="alineacion-select"
-                className="bg-gray-700 border border-gray-600 rounded-md p-2 text-white"
-                value={selectedFormationLabel}
-                onChange={(e) => setSelectedFormationLabel(e.target.value)}
-              >
-                {FORMACIONES.map((formacion) => (
-                  <option key={formacion.label} value={formacion.label}>
-                    {formacion.label}
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-col sm:flex-row items-center space-x-4 mb-4 md:mb-0">
+              <div className="flex items-center space-x-2 mb-2 sm:mb-0">
+                <label htmlFor="alineacion-select" className="text-lg">Alineación:</label>
+                <select
+                  id="alineacion-select"
+                  className="bg-gray-700 border border-gray-600 rounded-md p-2 text-white"
+                  value={selectedFormationLabel}
+                  onChange={(e) => setSelectedFormationLabel(e.target.value)}
+                >
+                  {FORMACIONES.map((formacion) => (
+                    <option key={formacion.label} value={formacion.label}>
+                      {formacion.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <label htmlFor="jornada-select" className="text-lg">Jornada:</label>
+                <select
+                  id="jornada-select"
+                  className="bg-gray-700 border border-gray-600 rounded-md p-2 text-white"
+                  value={selectedJornada ?? ''}
+                  onChange={(e) => setSelectedJornada(parseInt(e.target.value))}
+                >
+                  {jornadasDisponibles.map((j) => (
+                    <option key={j} value={j}>{j}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <button
               onClick={handleGuardarPlantilla}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md transition-colors duration-200"
+              disabled={!isEditingAllowed}
+              className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md transition-colors duration-200 ${!isEditingAllowed ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Guardar Plantilla
             </button>
