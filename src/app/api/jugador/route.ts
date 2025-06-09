@@ -1,35 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/libs/mysql";
+import { db } from "@/lib/mysql";
 import { NextApiRequest, NextApiResponse } from 'next';
-import { GetDefensas } from "@/database/players";
-import { GetAtacantes } from "@/database/players";
-import {GetMediocampistas} from "@/database/players";
-import {GetPorteros} from "@/database/players";
-
-interface Jugador {
-    idJugador: number;
-    Nombre: string;
-    Edad: string;
-    Pais: string;
-    Posicion: string;
-    Precio: number;
-    idEquipo: number;
-}
+import { GetDefensas, GetJugadores, GetAtacantes, GetEquipos, GetMediocampistas, GetPorteros } from "@/database/players";
+import { Jugador } from "@/lib/data";
 
 export async function GET() {
     try {
-        const result = await db.query("SELECT * FROM mydb.jugador") as Jugador[];
+        const result = await GetJugadores();
         if (!result.length) {
-            console.log("No se encontraron jugadores");
             return NextResponse.json({ message: "No se encontraron jugadores" }, { status: 404 });
         }
-        console.log(result);
         return NextResponse.json({ message: "Jugadores encontrados", result });
     } catch (error) {
         console.error("Error al obtener los jugadores:", error);
         return NextResponse.json({ message: "Error al obtener los jugadores", error }, { status: 500 });
     }
 }
+
 
 export async function GETporPrecio(req: NextRequest) {
     try {
@@ -40,7 +27,7 @@ export async function GETporPrecio(req: NextRequest) {
         }
         console.log(result);
         return NextResponse.json({ message: "Jugadores encontrados", result });
-    } catch (error) { 
+    } catch (error) {
         console.error("Error al obtener los jugadores:", error);
         return NextResponse.json({ message: "Error al obtener los jugadores", error }, { status: 500 });
     }
@@ -64,7 +51,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-export  async function handlerPorteros(req: NextApiRequest, res: NextApiResponse) {
+export async function handlerPorteros(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         try {
             const porteros = await GetPorteros();
@@ -78,7 +65,7 @@ export  async function handlerPorteros(req: NextApiRequest, res: NextApiResponse
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
-export  async function handlerDefensas(req: NextApiRequest, res: NextApiResponse) {
+export async function handlerDefensas(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         try {
             const porteros = await GetDefensas();
@@ -92,7 +79,7 @@ export  async function handlerDefensas(req: NextApiRequest, res: NextApiResponse
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
-export  async function handlerCentrocampistas(req: NextApiRequest, res: NextApiResponse) {
+export async function handlerCentrocampistas(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         try {
             const porteros = await GetMediocampistas();
@@ -106,7 +93,7 @@ export  async function handlerCentrocampistas(req: NextApiRequest, res: NextApiR
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
-export  async function handlerAtacantes(req: NextApiRequest, res: NextApiResponse) {
+export async function handlerAtacantes(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         try {
             const porteros = await GetAtacantes();

@@ -1,59 +1,43 @@
+import { db } from "@/lib/mysql";
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/libs/mysql";
 
-interface Manager {
-    idManager: number;
+// GET /api/manager/[id] → busca por idGoogle
+export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const idGoogle = params.id;
+
+    const [rows]: [any[]] = await db.query("SELECT * FROM Manager WHERE idGoogle = ?", [idGoogle]);
+
+    if (!rows || rows.length === 0) {
+      return NextResponse.json({ error: "Manager no encontrado" }, { status: 404 });
+    }
+
+    return NextResponse.json(rows[0]);
+  } catch (error: any) {
+    console.error("❌ Error en GET /api/manager/[id]:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-    try {
-        const result = await db.query("SELECT * FROM mydb.manager WHERE idManager = ?", [params.id]) as Manager[];
-        if (!result.length) {
-            console.log(`No se encontró el manager con ID ${params.id}`);
-            return NextResponse.json({ message: "No se encontró el manager" }, { status: 404 });
-        }
-        console.log(result);
-        return NextResponse.json({ message: "Manager encontrado", result });
-    } catch (error) {
-        console.error("Error al obtener el manager:", error);
-        return NextResponse.json({ message: "Error al obtener el manager", error }, { status: 500 });
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const idGoogle = params.id;
+    const { nombre, email, idGoogle: payloadIdGoogle } = await req.json();
+
+    if (!nombre || !email || !payloadIdGoogle) {
+      return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
     }
-}
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-    try {
-        const { idManager } = await req.json();
+    const result = await db.query(
+      "UPDATE Manager SET nombre = ?, email = ?, idGoogle = ? WHERE idGoogle = ?",
+      [nombre, email, payloadIdGoogle, idGoogle]
+    );
 
-        if (!idManager) {
-            return NextResponse.json({ message: "idManager es requerido" }, { status: 400 });
-        }
+    const affectedRows = (result as any)[0]?.affectedRows ?? 0;
 
-        const result = await db.query("UPDATE mydb.manager SET idManager = ? WHERE idManager = ?", [idManager, params.id]) as any;
-
-        if (result.affectedRows === 0) {
-            return NextResponse.json({ message: "No se encontró el manager para actualizar" }, { status: 404 });
-        }
-
-        console.log("Manager actualizado:", result);
-        return NextResponse.json({ message: "Manager actualizado exitosamente", result });
-    } catch (error) {
-        console.error("Error actualizando manager:", error);
-        return NextResponse.json({ message: "Error actualizando manager", error }, { status: 500 });
-    }
-}
-
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-    try {
-        const result = await db.query("DELETE FROM mydb.manager WHERE idManager = ?", [params.id]) as any;
-
-        if (result.affectedRows === 0) {
-            return NextResponse.json({ message: "No se encontró el manager para eliminar" }, { status: 404 });
-        }
-
-        console.log("Manager eliminado:", result);
-        return NextResponse.json({ message: "Manager eliminado exitosamente", result });
-    } catch (error){
-        console.error("Error eliminando manager:", error);
-        return NextResponse.json({ message: "Error eliminando manager", error }, { status: 500 });
-    }
+    return NextResponse.json({ updated: true, affectedRows });
+  } catch (error: any) {
+    console.error("❌ Error en POST /api/manager/[id]:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

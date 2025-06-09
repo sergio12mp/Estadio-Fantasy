@@ -1,45 +1,72 @@
+// src/components/playerCard.tsx
+import React from 'react';
+import { CartaJugadorEnPlantilla, ObjetoEquipado } from '@/lib/data';
 
-import { miequipo } from "../lib/data";
-import { Jugador } from "@/libs/data";
-import PlayButton from "./PlayButton.astro";
-
-interface Props {
-  miequipo: miequipo;
+interface PlayerCardProps {
+  carta: CartaJugadorEnPlantilla;
+  onEquipObject?: (playerId: number, object: ObjetoEquipado) => void;
+  onClick?: () => void;
 }
 
+const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick }) => {
+  if (!carta) {
+    return null;
+  }
 
-<a
-  href={`/miequipo/${miequipo.id}`}
-  //class="playlist-card p-4 flex-col items-center group relative transition-all duration-300 overflow-hidden gap-5 rounded-md shadow-lg hover:shadow-xl outline-none bg-zinc-500/5 hover:bg-zinc-500/20 focus:bg-zinc-500/20"
-  data-color={miequipo.color.dark}
-  transition={{ name: `miequipo ${miequipo.id} box` }}
-  transition:name=`miequipo ${miequipo.id} box`
->
-  <div class="w-40">
-    <div class="relative group mx-auto h-40 w-full flex-none shadow-lg">
-      <img
-        src={miequipo.cover}
-        alt={miequipo.title}
-        class="object-cover h-full w-full rounded-md shadow-[5px_0_30px_0px_rgba(0,0,0,0.3)]"
-        transition:name=`miequipo ${miequipo.id} image`
-      />
-      <div
-        class="absolute right-2 bottom-2 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all"
-        transition:name=`miequipo ${miequipo.id} play`
-      >
-        <PlayButton />
+  const maxObjetosSlots = carta.maxObjetosSlots || 0;
+  const objetosEquipados = carta.objetosEquipados || [];
+
+  return (
+    // Añadido w-full h-full para que ocupe todo el espacio del contenedor
+    <div
+      className={`border border-gray-300 dark:border-gray-600 rounded-lg p-2 shadow-sm relative text-center bg-white dark:bg-gray-800 text-black dark:text-white
+                  ${onClick ? 'cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all duration-200' : ''}
+                  w-full h-full flex flex-col justify-between`} // <--- ¡CAMBIOS CRUCIALES DE TAMAÑO Y FLEXBOX!
+      onClick={onClick}
+    >
+      <div> {/* Contenedor para el contenido superior */}
+        <h3 className="font-bold text-lg mb-1 truncate">{carta.Nombre}</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{carta.PosicionFrontend} - {carta.Rareza}</p>
+
+        <div className="relative w-24 h-24 mx-auto mb-2 rounded-full overflow-hidden border-2 border-blue-500 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-bold text-4xl">
+          {carta.Nombre ? carta.Nombre.charAt(0) : '?'}
+        </div>
+
+        <p className="text-sm font-semibold mb-1">Puntos: {carta.Puntos}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Edad: {carta.Edad} | País: {carta.Pais}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Equipo: {carta.NombreEquipo}</p>
+      </div>
+
+      {/* Sección de Objetos Equipados */}
+      <div className="mt-auto text-sm"> {/* mt-auto para empujar hacia abajo */}
+        <h4 className="font-semibold mb-1">Objetos:</h4>
+        {objetosEquipados.length > 0 ? (
+          objetosEquipados.map((obj, idx) => (
+            <div key={idx} className="flex items-center justify-center bg-gray-100 dark:bg-gray-700 p-1 rounded-md mb-1">
+              <div className="w-6 h-6 mr-1 relative bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs rounded">
+                OBJ
+              </div>
+              <span className="truncate">{obj.Nombre} ({obj.Rareza})</span>
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400">Ninguno</p>
+        )}
+        {/* Botón para equipar objeto si hay slots disponibles */}
+        {maxObjetosSlots > objetosEquipados.length && onEquipObject && (
+          <button
+            onClick={(e) => {
+                e.stopPropagation();
+                onEquipObject(carta.idCartaJugador, {} as ObjetoEquipado);
+            }}
+            className="mt-2 px-3 py-1 bg-purple-600 text-white text-xs rounded-md hover:bg-purple-700"
+          >
+            Equipar Objeto
+          </button>
+        )}
       </div>
     </div>
-    <div class="pt-2">
-      <div
-        class="font-bold block truncate"
-        transition:name=`miequipo ${miequipo.id} title`
-      >
-        {miequipo.title}
-      </div>
-      <div class="text-gray-400 text-xs">
-        <PureInlineArtists artists={miequipo.artists} />
-      </div>
-    </div>
-  </div>
-</a>
+  );
+};
+
+export default PlayerCard;

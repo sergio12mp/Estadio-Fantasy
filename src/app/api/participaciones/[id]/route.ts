@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/libs/mysql";
+import { db } from "@/lib/mysql";
 
 interface Participaciones {
     idManager: number;
