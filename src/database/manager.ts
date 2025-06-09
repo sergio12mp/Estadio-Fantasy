@@ -19,9 +19,31 @@ export async function CreateManager({
   idGoogle: string;
 }) {
   const [result] = await db.query(
-    "INSERT INTO Manager (name, email, idGoogle) VALUES (?, ?, ?)",
+    "INSERT INTO Manager (name, email, idGoogle, oro, balones) VALUES (?, ?, ?, 0, 0)",
     [name, email, idGoogle]
   ) as [QueryResult, any];
 
   return { id: (result as any).insertId };
+}
+
+// Obtener la economía de un manager por su id
+export async function GetManagerEconomy(idManager: number) {
+  const [rows]: [any[], any] = await db.query(
+    "SELECT oro, balones FROM Manager WHERE idManager = ?",
+    [idManager]
+  );
+  return (rows as any[])[0] || null;
+}
+
+// Actualizar la economía de un manager
+export async function UpdateManagerEconomy(
+  idManager: number,
+  oro: number,
+  balones: number
+) {
+  const [result] = await db.query(
+    "UPDATE Manager SET oro = ?, balones = ? WHERE idManager = ?",
+    [oro, balones, idManager]
+  ) as [QueryResult, any];
+  return { affectedRows: (result as any).affectedRows };
 }
