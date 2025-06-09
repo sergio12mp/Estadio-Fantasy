@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { abrirSobre, getProbabilidades, PACK_COSTS, PackType } from '@/lib/packs';
+import { currencyMap } from '../../currency/route';
 
 // Almacén simple en memoria para el pitty de cada manager
 const pittyMap = new Map<number, number>();
@@ -14,10 +15,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { managerId, tipo } = await req.json();
-    if (!managerId || !tipo) {
+    const { managerId, tipo, moneda } = await req.json();
+    if (!managerId || !tipo || !moneda) {
       return NextResponse.json(
-        { error: 'managerId y tipo son requeridos' },
+        { error: 'managerId, tipo y moneda son requeridos' },
         { status: 400 }
       );
     }
@@ -25,9 +26,28 @@ export async function POST(req: NextRequest) {
     const pittyActual = pittyMap.get(managerId) ?? 0;
     const resultado = abrirSobre(tipo as PackType, pittyActual);
     pittyMap.set(managerId, resultado.nuevaPitty);
+
+    const costos = PACK_COSTS[tipo as PackType];
+    const entry = currencyMap.get(managerId) ?? { oro: 0, balones: 0 };
+    if (
+      (moneda === 'oro' && entry.oro < costos.oro) ||
+      (moneda === 'balones' && entry.balones < costos.balones)
+    ) {
+      return NextResponse.json(
+        { error: 'No hay fondos suficientes' },
+        { status: 400 }
+      );
+    }
+
+    if (moneda === 'oro') entry.oro -= costos.oro;
+    else entry.balones -= costos.balones;
+    currencyMap.set(managerId, entry);
+    const nuevaEconomia = entry;
+
     return NextResponse.json({
       ...resultado,
-      costo: PACK_COSTS[tipo as PackType],
+      costo: costos,
+      nuevaEconomia,
     });
   } catch (error: any) {
     return NextResponse.json(
