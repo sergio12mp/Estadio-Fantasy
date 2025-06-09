@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     console.log(`INFO: Creando nuevo manager para idGoogle: ${idGoogle}`);
     // Extracción robusta del resultado de la inserción (contiene insertId)
     const insertResult: any = await db.query(
-      "INSERT INTO Manager (nombre, Email, idGoogle) VALUES (?, ?, ?)",
+      "INSERT INTO Manager (nombre, Email, idGoogle, oro, balones) VALUES (?, ?, ?, 0, 0)",
       [name, email, idGoogle]
     );
 
