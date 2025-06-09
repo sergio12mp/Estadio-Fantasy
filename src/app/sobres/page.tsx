@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { PackCard, PackType, Rarity, PACK_COSTS } from '@/lib/packs';
 
 export default function SobresPage() {
-  const { manager } = useAuth();
+  const { manager, currency, setCurrency } = useAuth();
   const [pitty, setPitty] = useState(0);
   const [prob, setProb] = useState<Record<Rarity, number>>({
     Comun: 0,
@@ -30,23 +30,32 @@ export default function SobresPage() {
     cargar();
   }, [manager]);
 
-  const abrir = async () => {
+  const [error, setError] = useState('');
+
+  const abrir = async (moneda: 'oro' | 'balones') => {
     if (!manager) return;
+    setError('');
     const res = await fetch('/api/sobres/abrir', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ managerId: manager.idManager, tipo }),
+      body: JSON.stringify({ managerId: manager.idManager, tipo, moneda }),
     });
     const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || 'Error');
+      return;
+    }
     setResultado(data.cartas);
     setPitty(data.nuevaPitty);
     setProb(data.probabilidades);
+    if (data.nuevaEconomia) setCurrency(data.nuevaEconomia);
   };
 
   return (
     <RequireAuth>
       <div className="p-4 max-w-xl mx-auto">
         <h1 className="text-2xl font-bold mb-4">Abrir sobres</h1>
+        <p className="mb-2">Oro: {currency.oro} · Balones: {currency.balones}</p>
         <div className="mb-4">
           <label className="mr-2">Tipo:</label>
           <select value={tipo} onChange={(e) => setTipo(e.target.value as PackType)} className="text-black">
@@ -54,7 +63,14 @@ export default function SobresPage() {
             <option value="jugador">Jugadores</option>
             <option value="objeto">Objetos</option>
           </select>
-          <button onClick={abrir} className="ml-4 px-4 py-2 bg-blue-600 text-white rounded">Abrir</button>
+          <div className="mt-2 flex gap-2">
+            <button onClick={() => abrir('balones')} className="px-4 py-2 bg-blue-600 text-white rounded">
+              Abrir con Balones ({PACK_COSTS[tipo].balones})
+            </button>
+            <button onClick={() => abrir('oro')} className="px-4 py-2 bg-yellow-600 text-white rounded">
+              Abrir con Oro ({PACK_COSTS[tipo].oro})
+            </button>
+          </div>
         </div>
         <div className="mb-4 text-sm">
           <p>Pitty actual: {pitty}</p>
@@ -65,12 +81,13 @@ export default function SobresPage() {
             ))}
           </ul>
         </div>
+        {error && <p className="text-red-600 mb-2">{error}</p>}
         {resultado && (
           <div>
             <h2 className="font-semibold mb-2">Cartas obtenidas:</h2>
             <ul className="list-disc pl-5">
               {resultado.map((c, idx) => (
-                <li key={idx}>{c.tipo} - {c.rareza}</li>
+                <li key={idx}>{c.tipo} - {c.nombre} ({c.rareza})</li>
               ))}
             </ul>
           </div>

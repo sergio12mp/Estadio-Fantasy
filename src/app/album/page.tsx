@@ -10,14 +10,16 @@ interface Carta extends Partial<CartaJugadorManager>, Partial<CartaObjetoManager
   Rareza: string;
   Nombre: string;
   NombreEquipo?: string;
+  id: number;
 }
 
 export default function AlbumPage() {
-  const { manager } = useAuth();
+  const { manager, currency, setCurrency } = useAuth();
   const [cartas, setCartas] = useState<Carta[]>([]);
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [filtroRareza, setFiltroRareza] = useState('todas');
   const [busqueda, setBusqueda] = useState('');
+  const [mensaje, setMensaje] = useState('');
 
   useEffect(() => {
     const cargar = async () => {
@@ -32,17 +34,36 @@ export default function AlbumPage() {
           Rareza: c.Rareza,
           Nombre: c.NombreJugador,
           NombreEquipo: c.NombreEquipo,
+          id: c.idCartaJugador,
         })),
         ...dataObj.cartasObjeto.map((c: CartaObjetoManager) => ({
           tipo: 'objeto',
           Rareza: c.Rareza,
           Nombre: c.NombreObjeto,
+          id: c.idCartaObjeto,
         })),
       ];
       setCartas(combinadas);
     };
     cargar();
   }, [manager]);
+
+  const eliminarCarta = async (carta: Carta) => {
+    if (!manager) return;
+    setMensaje('');
+    const res = await fetch(
+      `/api/cartas/${carta.tipo}/${carta.id}?managerId=${manager.idManager}`,
+      { method: 'DELETE' }
+    );
+    const data = await res.json();
+    if (!res.ok) {
+      setMensaje(data.error || 'Error');
+      return;
+    }
+    setCartas((prev) => prev.filter((c) => c.id !== carta.id));
+    const bal = data.balonesGanados || 0;
+    setCurrency({ ...currency, balones: currency.balones + bal });
+  };
 
   const cartasFiltradas = cartas.filter((c) => {
     if (filtroTipo !== 'todos' && c.tipo !== filtroTipo) return false;
@@ -76,9 +97,20 @@ export default function AlbumPage() {
             className="flex-1 px-2 text-black"
           />
         </div>
+        {mensaje && <p className="text-red-600 mb-2">{mensaje}</p>}
         <ul className="list-disc pl-5">
           {cartasFiltradas.map((c, idx) => (
-            <li key={idx}>{c.tipo} - {c.Nombre} ({c.Rareza}) {c.NombreEquipo && `- ${c.NombreEquipo}`}</li>
+            <li key={idx} className="mb-1">
+              {c.tipo} - {c.Nombre} ({c.Rareza}) {c.NombreEquipo && `- ${c.NombreEquipo}`}
+              {!(c.tipo === 'jugador' && c.Rareza === 'Común') && (
+                <button
+                  className="ml-2 text-sm text-red-600"
+                  onClick={() => eliminarCarta(c)}
+                >
+                  Eliminar
+                </button>
+              )}
+            </li>
           ))}
         </ul>
       </div>

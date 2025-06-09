@@ -151,29 +151,29 @@ export default function DashboardPage() {
 
           <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200 mb-8">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">💰 Añadir monedas</h2>
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="flex flex-col gap-2 mb-2">
+              <label className="text-sm">ID Manager</label>
               <input
                 type="text"
-                placeholder="ID Manager"
                 value={currencyManagerId}
                 onChange={(e) => setCurrencyManagerId(e.target.value)}
                 className="border px-2 py-1 text-black"
               />
+              <label className="text-sm">Oro</label>
               <input
                 type="number"
-                placeholder="Oro"
                 value={oro}
                 onChange={(e) => setOro(e.target.value)}
                 className="border px-2 py-1 text-black"
               />
+              <label className="text-sm">Balones</label>
               <input
                 type="number"
-                placeholder="Balones"
                 value={balones}
                 onChange={(e) => setBalones(e.target.value)}
                 className="border px-2 py-1 text-black"
               />
-              <button onClick={agregarMonedas} className="bg-blue-600 text-white px-3 py-1 rounded">Agregar</button>
+              <button onClick={agregarMonedas} className="mt-2 bg-blue-600 text-white px-3 py-1 rounded">Agregar</button>
             </div>
             {mensajeMonedas && <p className="text-sm">{mensajeMonedas}</p>}
           </div>
