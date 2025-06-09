@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/libs/mysql";
-import { Jugador } from "@/libs/data";
+import { db } from "@/lib/mysql";
+import { Jugador } from "@/lib/data";
 
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {

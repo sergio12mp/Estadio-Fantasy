@@ -1,23 +1,27 @@
-import {db} from "@/libs/mysql";
+// src/database/manager.ts
+import { db } from "@/lib/mysql";
+import { QueryResult } from "mysql2";
 
-
-export interface Manager {
-    idManager: number;
-    Nombre: string;
-    idGoogle: string;
-    Email: string;
-}
-
-
+// Buscar manager por email
 export async function GetManagerByEmail(email: string) {
-  const [rows]: any = await db.query("SELECT * FROM mydb.Manager WHERE Email = ?", [email]);
-  return rows.length > 0 ? rows[0] : null;
+  const [rows]: [any[], any] = await db.query("SELECT * FROM Manager WHERE email = ?", [email]);
+  return (rows as any[])[0] || null;
 }
 
-export async function CreateManager({ name, email, idGoogle }: { name: string; email: string; idGoogle: string }) {
-  const result: any = await db.query(
-    "INSERT INTO mydb.Manager (Nombre, Email, idGoogle) VALUES (?, ?, ?)",
+// Crear nuevo manager
+export async function CreateManager({
+  name,
+  email,
+  idGoogle,
+}: {
+  name: string;
+  email: string;
+  idGoogle: string;
+}) {
+  const [result] = await db.query(
+    "INSERT INTO Manager (name, email, idGoogle) VALUES (?, ?, ?)",
     [name, email, idGoogle]
-  );
-  return { id: result.insertId };
+  ) as [QueryResult, any];
+
+  return { id: (result as any).insertId };
 }

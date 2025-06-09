@@ -5,7 +5,7 @@ import Carousel from "react-bootstrap/Carousel";
 import Figure from "react-bootstrap/Figure";
 
 
-export default async function Home() {
+export default function Home() {
   return (
     <>
       

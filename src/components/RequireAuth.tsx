@@ -1,27 +1,20 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
-import { ReactNode, useEffect } from "react";
+import { useEffect } from "react";
 
-interface RequireAuthProps {
-  children: ReactNode;
-}
-
-const RequireAuth = ({ children }: RequireAuthProps) => {
-  const { data: session, status } = useSession();
+export default function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "loading") return; // Do nothing while loading
-    if (!session) router.push("/miequipo"); // Redirect if not authenticated
-  }, [session, status, router]);
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
 
-  if (status === "loading") {
-    return <div>Loading...</div>; // Show loading state while session is being fetched
-  }
+  if (loading || !user) return <p>Cargando...</p>;
 
-  return <>{session ? children : null}</>;
-};
-
-export default RequireAuth;
+  return <>{children}</>;
+}

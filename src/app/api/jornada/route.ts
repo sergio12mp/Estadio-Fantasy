@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/libs/mysql";
-import { Jornada } from "@/libs/data";
+import { db } from "@/lib/mysql";
+import { Jornada } from "@/lib/data";
 
 export async function GET() {
     try {

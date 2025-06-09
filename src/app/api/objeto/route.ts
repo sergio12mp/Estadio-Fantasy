@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/libs/mysql";
-import { Objetos } from "@/libs/data";
+import { db } from "@/lib/mysql";
+import { Objetos } from "@/lib/data";
 
 
 export async function GET() {

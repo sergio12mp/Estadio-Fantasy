@@ -1,10 +1,10 @@
 import React from 'react';
-import { Jugador } from '@/libs/data';
+import { Jugador } from '@/lib/data';
 import { text } from 'stream/consumers';
 
 const PlayerSelection: React.FC<Jugador> = ({idJugador, Nombre,idEquipo, Posicion}) => {
     return (
-       <div className="col-md-3"> <a href='/perfil' style={{ textDecoration: 'none' }}> 
+       <div className="col-md-3"> <a href='/pages/jugadores' style={{ textDecoration: 'none' }}> 
             <div className="card p-3 mb-2">
                 <div className="d-flex justify-content-between">
                     <div className="d-flex flex-row align-items-center">
