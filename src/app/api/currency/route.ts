@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const currencyMap = new Map<number, { oro: number; balones: number }>();
+export const currencyMap = new Map<number, { oro: number; balones: number }>();
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
