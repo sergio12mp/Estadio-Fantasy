@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { abrirSobre, getProbabilidades, PACK_COSTS, PackType } from '@/lib/packs';
 import { currencyMap } from '../../currency/route';
+import { db } from '@/lib/mysql'; // Asegúrate de importar tu pool de conexión
 
 // Almacén simple en memoria para el pitty de cada manager
 const pittyMap = new Map<number, number>();
@@ -28,7 +29,24 @@ export async function POST(req: NextRequest) {
     pittyMap.set(managerId, resultado.nuevaPitty);
 
     const costos = PACK_COSTS[tipo as PackType];
-    const entry = currencyMap.get(managerId) ?? { oro: 0, balones: 0 };
+    console.log('Costos:', costos);
+    console.log('Manager ID:', managerId);
+    let entry = currencyMap.get(Number(managerId)); // o String(managerId) según corresponda
+    console.log('Entry:', entry);
+
+    if (!entry) {
+      // Aquí deberías consultar la base de datos para ese managerId
+      const dbEntry = await obtenerEconomiaDeDB(Number(managerId)); // Implementa esta función
+      if (!dbEntry) {
+        return NextResponse.json(
+          { error: 'El manager no tiene economía inicializada' },
+          { status: 400 }
+        );
+      }
+      currencyMap.set(Number(managerId), dbEntry);
+      entry = dbEntry;
+    }
+
     if (
       (moneda === 'oro' && entry.oro < costos.oro) ||
       (moneda === 'balones' && entry.balones < costos.balones)
@@ -54,5 +72,26 @@ export async function POST(req: NextRequest) {
       { error: 'Error al abrir el sobre', details: error.message },
       { status: 500 }
     );
+  }
+}
+
+
+
+
+async function obtenerEconomiaDeDB(managerId: number): Promise<{ oro: number; balones: number } | null> {
+  try {
+    const [rows] = await db.query(
+      'SELECT oro, balones FROM Manager WHERE idManager = ?',
+      [managerId]
+    );
+    // mysql2 devuelve rows como RowDataPacket[]
+    if (Array.isArray(rows) && rows.length > 0) {
+      const { oro, balones } = (rows as any[])[0];
+      return { oro, balones };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error consultando economía de DB:', error);
+    return null;
   }
 }

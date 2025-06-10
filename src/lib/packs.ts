@@ -121,4 +121,5 @@ export function getProbabilidades(pitty: number): Record<Rarity, number> {
   return calcularProbabilidades(pitty);
 }
 
-export { PACK_COSTS, PackCard, PackResult, PackType, Rarity } from './packs-types';
+export { PACK_COSTS } from './packs-types';export type { PackCard, PackResult, PackType, Rarity } from './packs-types';
+
