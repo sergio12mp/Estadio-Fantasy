@@ -1,19 +1,11 @@
 import { db } from './mysql';
-
-export type Rarity = 'Comun' | 'Rara' | 'Epica' | 'Legendaria';
-export type PackType = 'jugador' | 'objeto' | 'normal';
-
-export interface PackCard {
-  tipo: 'jugador' | 'objeto';
-  nombre: string;
-  rareza: Rarity;
-}
-
-export interface PackResult {
-  cartas: PackCard[];
-  nuevaPitty: number;
-  probabilidades: Record<Rarity, number>;
-}
+import {
+  PACK_COSTS,
+  PackCard,
+  PackResult,
+  PackType,
+  Rarity,
+} from './packs-types';
 
 const PITTY_MAX = 10;
 
@@ -49,12 +41,6 @@ function nombreAleatorio(lista: string[]): string {
   const idx = Math.floor(Math.random() * lista.length);
   return lista[idx];
 }
-
-export const PACK_COSTS = {
-  normal: { balones: 100, oro: 10 },
-  jugador: { balones: 150, oro: 15 },
-  objeto: { balones: 150, oro: 15 },
-};
 
 function calcularProbabilidades(pitty: number): Record<Rarity, number> {
   const baseLegendaria = BASE_PROBABILITIES.Legendaria;
@@ -134,3 +120,5 @@ export async function abrirSobre(
 export function getProbabilidades(pitty: number): Record<Rarity, number> {
   return calcularProbabilidades(pitty);
 }
+
+export { PACK_COSTS, PackCard, PackResult, PackType, Rarity } from './packs-types';
