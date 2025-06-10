@@ -32,7 +32,7 @@ export default function SobresPage() {
 
   const [error, setError] = useState('');
 
-  const abrir = async (moneda: 'oro' | 'balones') => {
+  const abrir = async (moneda: 'Oro' | 'Balones') => {
     if (!manager) return;
     setError('');
     const res = await fetch('/api/sobres/abrir', {
@@ -64,10 +64,10 @@ export default function SobresPage() {
             <option value="objeto">Objetos</option>
           </select>
           <div className="mt-2 flex gap-2">
-            <button onClick={() => abrir('balones')} className="px-4 py-2 bg-blue-600 text-white rounded">
+            <button onClick={() => abrir('Balones')} className="px-4 py-2 bg-blue-600 text-white rounded">
               Abrir con Balones ({PACK_COSTS[tipo].balones})
             </button>
-            <button onClick={() => abrir('oro')} className="px-4 py-2 bg-yellow-600 text-white rounded">
+            <button onClick={() => abrir('Oro')} className="px-4 py-2 bg-yellow-600 text-white rounded">
               Abrir con Oro ({PACK_COSTS[tipo].oro})
             </button>
           </div>
