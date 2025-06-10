@@ -1,3 +1,5 @@
+import { db } from './mysql';
+
 export type Rarity = 'Comun' | 'Rara' | 'Epica' | 'Legendaria';
 export type PackType = 'jugador' | 'objeto' | 'normal';
 
@@ -22,8 +24,26 @@ const BASE_PROBABILITIES: Record<Rarity, number> = {
   Legendaria: 0.1,
 };
 
-const PLAYER_NAMES = ['Jugador A', 'Jugador B', 'Jugador C', 'Jugador D', 'Jugador E'];
-const OBJECT_NAMES = ['Botas mágicas', 'Casco reforzado', 'Guantes dorados', 'Escudo real', 'Poción secreta'];
+let playerNamesCache: Promise<string[]> | null = null;
+let objectNamesCache: Promise<string[]> | null = null;
+
+async function getPlayerNames(): Promise<string[]> {
+  if (!playerNamesCache) {
+    playerNamesCache = db
+      .query('SELECT Nombre FROM Jugador')
+      .then(([rows]: any) => rows.map((r: any) => r.Nombre));
+  }
+  return playerNamesCache;
+}
+
+async function getObjectNames(): Promise<string[]> {
+  if (!objectNamesCache) {
+    objectNamesCache = db
+      .query('SELECT Nombre FROM Objetos')
+      .then(([rows]: any) => rows.map((r: any) => r.Nombre));
+  }
+  return objectNamesCache;
+}
 
 function nombreAleatorio(lista: string[]): string {
   const idx = Math.floor(Math.random() * lista.length);
@@ -61,24 +81,26 @@ function obtenerRareza(prob: Record<Rarity, number>): Rarity {
   return 'Comun';
 }
 
-export function abrirSobre(
+export async function abrirSobre(
   tipo: PackType,
   pitty: number
-): PackResult {
+): Promise<PackResult> {
   const probabilidades = calcularProbabilidades(pitty);
+  const playerNames = await getPlayerNames();
+  const objectNames = await getObjectNames();
   const cartas: PackCard[] = [];
 
   if (tipo === 'normal') {
     for (let i = 0; i < 3; i++) {
       cartas.push({
         tipo: 'jugador',
-        nombre: nombreAleatorio(PLAYER_NAMES),
+        nombre: nombreAleatorio(playerNames),
         rareza: obtenerRareza(probabilidades),
       });
     }
     cartas.push({
       tipo: 'objeto',
-      nombre: nombreAleatorio(OBJECT_NAMES),
+      nombre: nombreAleatorio(objectNames),
       rareza: obtenerRareza(probabilidades),
     });
     const aleatorio = Math.random() < 0.5 ? 'jugador' : 'objeto';
@@ -86,8 +108,8 @@ export function abrirSobre(
       tipo: aleatorio,
       nombre:
         aleatorio === 'jugador'
-          ? nombreAleatorio(PLAYER_NAMES)
-          : nombreAleatorio(OBJECT_NAMES),
+          ? nombreAleatorio(playerNames)
+          : nombreAleatorio(objectNames),
       rareza: obtenerRareza(probabilidades),
     });
   } else {
@@ -96,8 +118,8 @@ export function abrirSobre(
         tipo,
         nombre:
           tipo === 'jugador'
-            ? nombreAleatorio(PLAYER_NAMES)
-            : nombreAleatorio(OBJECT_NAMES),
+            ? nombreAleatorio(playerNames)
+            : nombreAleatorio(objectNames),
         rareza: obtenerRareza(probabilidades),
       });
     }
