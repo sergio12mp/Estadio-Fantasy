@@ -3,7 +3,7 @@
 import RequireAuth from '@/components/RequireAuth';
 import { useAuth } from '@/context/auth-context';
 import { useEffect, useState } from 'react';
-import { PackCard, PackType, Rarity, PACK_COSTS } from '@/lib/packs';
+import { PackCard, PackType, Rarity, PACK_COSTS } from '@/lib/packs-types';
 
 export default function SobresPage() {
   const { manager, currency, setCurrency } = useAuth();
