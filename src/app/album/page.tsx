@@ -11,6 +11,7 @@ interface Carta extends Partial<CartaJugadorManager>, Partial<CartaObjetoManager
   Nombre: string;
   NombreEquipo?: string;
   id: number;
+  cantidad?: number;
 }
 
 export default function AlbumPage() {
@@ -51,8 +52,12 @@ export default function AlbumPage() {
   const eliminarCarta = async (carta: Carta) => {
     if (!manager) return;
     setMensaje('');
+    const cartaReal = cartas.find(
+      (c) => c.tipo === carta.tipo && c.Nombre === carta.Nombre && c.Rareza === carta.Rareza
+    );
+    if (!cartaReal) return;
     const res = await fetch(
-      `/api/cartas/${carta.tipo}/${carta.id}?managerId=${manager.idManager}`,
+      `/api/cartas/${cartaReal.tipo}/${cartaReal.id}?managerId=${manager.idManager}`,
       { method: 'DELETE' }
     );
     const data = await res.json();
@@ -60,7 +65,15 @@ export default function AlbumPage() {
       setMensaje(data.error || 'Error');
       return;
     }
-    setCartas((prev) => prev.filter((c) => c.id !== carta.id));
+    setCartas((prev) => {
+      const idx = prev.findIndex((c) => c.id === cartaReal.id);
+      if (idx !== -1) {
+        const copia = [...prev];
+        copia.splice(idx, 1);
+        return copia;
+      }
+      return prev;
+    });
     const bal = data.balonesGanados || 0;
     setCurrency({ ...currency, balones: currency.balones + bal });
   };
@@ -71,6 +84,18 @@ export default function AlbumPage() {
     if (busqueda && !c.Nombre.toLowerCase().includes(busqueda.toLowerCase())) return false;
     return true;
   });
+
+  const agrupadas = new Map<string, Carta>();
+  for (const c of cartasFiltradas) {
+    const key = `${c.tipo}-${c.Nombre}-${c.Rareza}`;
+    const existente = agrupadas.get(key);
+    if (existente) {
+      existente.cantidad = (existente.cantidad || 1) + 1;
+    } else {
+      agrupadas.set(key, { ...c, cantidad: 1 });
+    }
+  }
+  const cartasMostrar = Array.from(agrupadas.values());
 
   return (
     <RequireAuth>
@@ -99,9 +124,10 @@ export default function AlbumPage() {
         </div>
         {mensaje && <p className="text-red-600 mb-2">{mensaje}</p>}
         <ul className="list-disc pl-5">
-          {cartasFiltradas.map((c, idx) => (
+          {cartasMostrar.map((c, idx) => (
             <li key={idx} className="mb-1">
-              {c.tipo} - {c.Nombre} ({c.Rareza}) {c.NombreEquipo && `- ${c.NombreEquipo}`}
+              {c.tipo} - {c.Nombre} ({c.Rareza}) x{c.cantidad}{' '}
+              {c.NombreEquipo && `- ${c.NombreEquipo}`}
               {!(c.tipo === 'jugador' && c.Rareza === 'Común') && (
                 <button
                   className="ml-2 text-sm text-red-600"
