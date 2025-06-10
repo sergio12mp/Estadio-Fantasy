@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     const pittyActual = pittyMap.get(managerId) ?? 0;
-    const resultado = abrirSobre(tipo as PackType, pittyActual);
+    const resultado = await abrirSobre(tipo as PackType, pittyActual);
     pittyMap.set(managerId, resultado.nuevaPitty);
 
     const costos = PACK_COSTS[tipo as PackType];
