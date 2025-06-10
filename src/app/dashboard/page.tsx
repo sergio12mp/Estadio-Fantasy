@@ -5,8 +5,10 @@
 import RequireAdmin from "@/components/RequireAdmin";
 import SeleccionarJornada from "@/components/SeleccionarJornada";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/auth-context";
 
 export default function DashboardPage() {
+  const { manager, setCurrency } = useAuth();
   const [fechaActual, setFechaActual] = useState("");
   const [nuevaFecha, setNuevaFecha] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -93,7 +95,11 @@ export default function DashboardPage() {
       }),
     });
     if (res.ok) {
+      const data = await res.json();
       setMensajeMonedas("Monedas añadidas");
+      if (manager && manager.idManager === Number(currencyManagerId)) {
+        setCurrency(data);
+      }
     } else {
       setMensajeMonedas("Error al añadir monedas");
     }
