@@ -30,7 +30,7 @@ export default function NavBar() {
               <Link href="/mi-perfil" className="hover:underline">Mi Perfil</Link>
               <Link href="/dashboard" className="hover:underline">Dashboard</Link>
               <Link href="/mi-equipo" className="hover:underline">Mi Equipo</Link>
-              <Link href="/profile" className="hover:underline">Perfil</Link>
+              <Link href="/ligas" className="hover:underline">Mis Ligas</Link>
               <SignOutButton />
             </>
           ) : (

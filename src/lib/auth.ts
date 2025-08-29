@@ -1,7 +1,10 @@
+// src/lib/auth.ts
+
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { db } from "@/lib/mysql";
-import { Console } from "console";
+import { joinGeneralLeague } from "./liga-utils"; // <-- Importamos la nueva función
+
 export const authConfig: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -20,25 +23,35 @@ export const authConfig: NextAuthOptions = {
         if (account.provider === "google") {
           // Query the database for a user with the given email
           const [dbUser]: any = await db.query("SELECT * FROM mydb.Manager WHERE Email = ?", [user?.email]);
-          console.log(dbUser);
-          if (!dbUser) {
-            // If the user does not exist, insert them into the database
+          let managerId;
+
+          if (Array.isArray(dbUser) && dbUser.length === 0) {
+            // Si el usuario no existe, lo insertamos en la base de datos
             const result: any = await db.query(
               "INSERT INTO mydb.Manager (Nombre, idGoogle, Email) VALUES (?, ?, ?)",
               [user.name, user.id, user.email]
             );
-            // Update the user's id with the new database entry's id
-            user.id = result.insertId;
+            managerId = result.insertId;
+            console.log(`INFO: Nuevo manager creado con ID: ${managerId}`);
+            
           } else {
-            // If the user exists, you might want to update their information or just proceed
-            console.log("User already exists in the database.");
+            // Si el usuario existe, obtenemos su ID
+            managerId = Array.isArray(dbUser) ? dbUser[0].idManager : dbUser.idManager;
+            console.log("INFO: El manager ya existe en la base de datos.");
           }
+
+          // ASIGNAR EL MANAGER A LA LIGA GENERAL
+          if (managerId) {
+             await joinGeneralLeague(managerId); // <-- Llamamos a la nueva función
+          }
+          
         }
-        return true; // Return true to signify successful sign in
+        return true; // Retorna true para continuar el proceso de inicio de sesión
       } catch (error) {
-        console.error("Error during sign-in:", error);
-        return false; // Return false to prevent sign in if an error occurs
+        console.error("Error durante el sign-in:", error);
+        return false; // Retorna false si hay un error para detener el sign-in
       }
     },
+    // Añade el resto de tus callbacks aquí si los tienes
   },
 };
