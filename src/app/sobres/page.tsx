@@ -58,7 +58,7 @@ export default function SobresPage() {
         <p className="mb-2">Oro: {currency.oro} · Balones: {currency.balones}</p>
         <div className="mb-4">
           <label className="mr-2">Tipo:</label>
-          <select value={tipo} onChange={(e) => setTipo(e.target.value as PackType)} className="text-black">
+          <select value={tipo} onChange={(e) => setTipo(e.target.value as PackType)} className="text-black dark:text-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-1">
             <option value="normal">Normal</option>
             <option value="jugador">Jugadores</option>
             <option value="objeto">Objetos</option>

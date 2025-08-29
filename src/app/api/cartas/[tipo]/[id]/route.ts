@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mysql';
+import { revalidatePath } from 'next/cache';
 
 function reward(rareza: string): number {
   switch (rareza) {
@@ -34,6 +35,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { tipo: str
         'SELECT rareza FROM CartaJugador WHERE idCartaJugador = ? AND Manager_idManager = ?',
         [id, managerId]
       );
+      revalidatePath('/album');//Refrescar cache del álbum
       const r = Array.isArray(rows) ? rows[0] : rows;
       if (!r) return NextResponse.json({ error: 'Carta no encontrada' }, { status: 404 });
       const rareza = r.rareza ?? r.Rareza;
@@ -41,6 +43,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { tipo: str
         return NextResponse.json({ error: 'No se pueden eliminar cartas comunes de jugador' }, { status: 400 });
       }
       await db.query('DELETE FROM CartaJugador WHERE idCartaJugador = ? AND Manager_idManager = ?', [id, managerId]);
+      revalidatePath('/album');//Refrescar cache del álbum
       return NextResponse.json({ balonesGanados: reward(rareza) });
     } else if (params.tipo === 'objeto') {
       const [rows]: any = await db.query(

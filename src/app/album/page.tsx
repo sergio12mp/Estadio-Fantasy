@@ -2,8 +2,10 @@
 
 import RequireAuth from '@/components/RequireAuth';
 import { useAuth } from '@/context/auth-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { CartaJugadorManager, CartaObjetoManager } from '@/lib/data';
+import AlbumView from '@/components/AlbumView';
+import AlbumProgress from '@/components/AlbumProgress';
 
 interface Carta extends Partial<CartaJugadorManager>, Partial<CartaObjetoManager> {
   tipo: 'jugador' | 'objeto';
@@ -12,15 +14,30 @@ interface Carta extends Partial<CartaJugadorManager>, Partial<CartaObjetoManager
   NombreEquipo?: string;
   id: number;
   cantidad?: number;
+  Puntos?: number;
 }
+
+const RAREZAS = ['Común', 'Raro', 'Épico', 'Legendario'];
+
+const normalizeString = (str: string) => {
+  if (!str) return '';
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+};
 
 export default function AlbumPage() {
   const { manager, currency, setCurrency } = useAuth();
   const [cartas, setCartas] = useState<Carta[]>([]);
   const [filtroTipo, setFiltroTipo] = useState('todos');
-  const [filtroRareza, setFiltroRareza] = useState('todas');
+  const [filtroRareza, setFiltroRareza] = useState<string[]>([]);
+  const [filtroEquipo, setFiltroEquipo] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [ordenarPor, setOrdenarPor] = useState('nombre');
+
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [itemsPorPagina, setItemsPorPagina] = useState(32);
+  const ITEMS_POR_PAGINA_OPTIONS = [8, 16, 32, 64, 128, 256, Infinity];
+
 
   useEffect(() => {
     const cargar = async () => {
@@ -29,19 +46,25 @@ export default function AlbumPage() {
       const dataJug = await resJug.json();
       const resObj = await fetch(`/api/cartas-manager/objetos?managerId=${manager.idManager}`);
       const dataObj = await resObj.json();
+
+      const cartasJugador = dataJug.cartasJugador || [];
+      const cartasObjeto = dataObj.cartasObjeto || [];
+
       const combinadas: Carta[] = [
-        ...dataJug.cartasJugador.map((c: CartaJugadorManager) => ({
+        ...cartasJugador.map((c: CartaJugadorManager) => ({
           tipo: 'jugador',
           Rareza: c.Rareza,
           Nombre: c.NombreJugador,
           NombreEquipo: c.NombreEquipo,
           id: c.idCartaJugador,
+          Puntos: c.Puntos,
         })),
-        ...dataObj.cartasObjeto.map((c: CartaObjetoManager) => ({
+        ...cartasObjeto.map((c: CartaObjetoManager) => ({
           tipo: 'objeto',
           Rareza: c.Rareza,
           Nombre: c.NombreObjeto,
           id: c.idCartaObjeto,
+          Puntos: 0,
         })),
       ];
       setCartas(combinadas);
@@ -52,10 +75,10 @@ export default function AlbumPage() {
   const eliminarCarta = async (carta: Carta) => {
     if (!manager) return;
     setMensaje('');
-    const cartaReal = cartas.find(
-      (c) => c.tipo === carta.tipo && c.Nombre === carta.Nombre && c.Rareza === carta.Rareza
-    );
+    
+    const cartaReal = cartas.find((c) => c.id === carta.id);
     if (!cartaReal) return;
+    
     const res = await fetch(
       `/api/cartas/${cartaReal.tipo}/${cartaReal.id}?managerId=${manager.idManager}`,
       { method: 'DELETE' }
@@ -65,80 +88,107 @@ export default function AlbumPage() {
       setMensaje(data.error || 'Error');
       return;
     }
-    setCartas((prev) => {
-      const idx = prev.findIndex((c) => c.id === cartaReal.id);
-      if (idx !== -1) {
-        const copia = [...prev];
-        copia.splice(idx, 1);
-        return copia;
-      }
-      return prev;
-    });
+    
+    setCartas((prev) => prev.filter(c => c.id !== cartaReal.id));
+    
     const bal = data.balonesGanados || 0;
     setCurrency({ ...currency, balones: currency.balones + bal });
   };
 
-  const cartasFiltradas = cartas.filter((c) => {
-    if (filtroTipo !== 'todos' && c.tipo !== filtroTipo) return false;
-    if (filtroRareza !== 'todas' && c.Rareza !== filtroRareza) return false;
-    if (busqueda && !c.Nombre.toLowerCase().includes(busqueda.toLowerCase())) return false;
-    return true;
-  });
+  const cartasFiltradasYOrdenadas = useMemo(() => {
+    const filtradas = cartas.filter((c) => {
+      if (filtroTipo !== 'todos' && c.tipo !== filtroTipo) return false;
+      if (filtroRareza.length > 0 && !filtroRareza.some(r => normalizeString(r) === normalizeString(c.Rareza))) return false;
+      if (filtroEquipo !== 'todos' && c.NombreEquipo !== filtroEquipo) return false;
 
-  const agrupadas = new Map<string, Carta>();
-  for (const c of cartasFiltradas) {
-    const key = `${c.tipo}-${c.Nombre}-${c.Rareza}`;
-    const existente = agrupadas.get(key);
-    if (existente) {
-      existente.cantidad = (existente.cantidad || 1) + 1;
-    } else {
-      agrupadas.set(key, { ...c, cantidad: 1 });
-    }
-  }
-  const cartasMostrar = Array.from(agrupadas.values());
+      if (busqueda) {
+          const busquedaLowerCase = busqueda.toLowerCase();
+          const nombreJugador = c.Nombre?.toLowerCase() || '';
+          const nombreEquipo = c.NombreEquipo?.toLowerCase() || '';
+          if (!nombreJugador.includes(busquedaLowerCase) && !nombreEquipo.includes(busquedaLowerCase)) {
+              return false;
+          }
+      }
+      return true;
+    });
+
+    const ordenadas = filtradas.sort((a, b) => {
+      if (ordenarPor === 'nombre') {
+        return a.Nombre.localeCompare(b.Nombre);
+      }
+      if (ordenarPor === 'puntos') {
+        const puntosA = a.Puntos || 0;
+        const puntosB = b.Puntos || 0;
+        return puntosB - puntosA;
+      }
+      if (ordenarPor === 'equipo') {
+        const equipoA = a.NombreEquipo || '';
+        const equipoB = b.NombreEquipo || '';
+        return equipoA.localeCompare(equipoB);
+      }
+      if (ordenarPor === 'rareza') {
+        const ordenRarezas = RAREZAS.reduce((acc, rareza, idx) => ({ ...acc, [rareza]: idx }), {} as Record<string, number>);
+        return (ordenRarezas[a.Rareza] ?? 99) - (ordenRarezas[b.Rareza] ?? 99);
+      }
+      return 0;
+    });
+
+    return ordenadas;
+  }, [cartas, filtroTipo, filtroRareza, filtroEquipo, busqueda, ordenarPor]);
+
+  const handleRarezaChange = (rareza: string) => {
+    setFiltroRareza(prev => 
+      prev.includes(rareza) 
+        ? prev.filter(r => r !== rareza) 
+        : [...prev, rareza]
+    );
+    setPaginaActual(1);
+  };
+  
+  const equiposUnicos = useMemo(() => {
+    const equipos = cartas
+      .filter(c => c.tipo === 'jugador' && c.NombreEquipo)
+      .map(c => c.NombreEquipo as string);
+    return ['todos', ...Array.from(new Set(equipos))].sort();
+  }, [cartas]);
+  
+  const indiceUltimoItem = paginaActual * itemsPorPagina;
+  const indicePrimerItem = itemsPorPagina === Infinity ? 0 : indiceUltimoItem - itemsPorPagina;
+  const cartasPaginadas = itemsPorPagina === Infinity
+    ? cartasFiltradasYOrdenadas
+    : cartasFiltradasYOrdenadas.slice(indicePrimerItem, indiceUltimoItem);
+
+  const totalPaginas = itemsPorPagina === Infinity
+    ? 1
+    : Math.ceil(cartasFiltradasYOrdenadas.length / itemsPorPagina);
 
   return (
     <RequireAuth>
       <div className="p-4 max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold mb-4">Álbum de cartas</h1>
-        <div className="flex flex-wrap gap-2 mb-4">
-          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="text-black">
-            <option value="todos">Todos</option>
-            <option value="jugador">Jugadores</option>
-            <option value="objeto">Objetos</option>
-          </select>
-          <select value={filtroRareza} onChange={(e) => setFiltroRareza(e.target.value)} className="text-black">
-            <option value="todas">Todas</option>
-            <option value="Común">Común</option>
-            <option value="Raro">Raro</option>
-            <option value="Épico">Épico</option>
-            <option value="Legendario">Legendario</option>
-          </select>
-          <input
-            type="text"
-            placeholder="Buscar"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="flex-1 px-2 text-black"
-          />
-        </div>
-        {mensaje && <p className="text-red-600 mb-2">{mensaje}</p>}
-        <ul className="list-disc pl-5">
-          {cartasMostrar.map((c, idx) => (
-            <li key={idx} className="mb-1">
-              {c.tipo} - {c.Nombre} ({c.Rareza}) x{c.cantidad}{' '}
-              {c.NombreEquipo && `- ${c.NombreEquipo}`}
-              {!(c.tipo === 'jugador' && c.Rareza === 'Común') && (
-                <button
-                  className="ml-2 text-sm text-red-600"
-                  onClick={() => eliminarCarta(c)}
-                >
-                  Eliminar
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+        <AlbumProgress cartas={cartas} />
+        <AlbumView
+          cartas={cartasPaginadas}
+          eliminarCarta={eliminarCarta}
+          filtroTipo={filtroTipo}
+          setFiltroTipo={setFiltroTipo}
+          filtroRareza={filtroRareza}
+          setFiltroRareza={handleRarezaChange}
+          filtroEquipo={filtroEquipo}
+          setFiltroEquipo={setFiltroEquipo}
+          busqueda={busqueda}
+          setBusqueda={setBusqueda}
+          mensaje={mensaje}
+          ordenarPor={ordenarPor}
+          setOrdenarPor={setOrdenarPor}
+          equiposUnicos={equiposUnicos}
+          paginaActual={paginaActual}
+          totalPaginas={totalPaginas}
+          itemsPorPagina={itemsPorPagina}
+          setPaginaActual={setPaginaActual}
+          setItemsPorPagina={setItemsPorPagina}
+          itemsPorPaginaOptions={ITEMS_POR_PAGINA_OPTIONS}
+        />
       </div>
     </RequireAuth>
   );
