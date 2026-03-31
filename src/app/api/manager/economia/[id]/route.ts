@@ -9,13 +9,17 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
     const [rows]: [any[], any] = await db.query(
-      "SELECT oro, balones FROM Manager WHERE idManager = ?",
+      "SELECT oro, balones, puntuacion_actual FROM Manager WHERE idManager = ?",
       [idManager]
     );
     if (!rows || rows.length === 0) {
       return NextResponse.json({ error: "Manager no encontrado" }, { status: 404 });
     }
-    return NextResponse.json({ oro: rows[0].oro, balones: rows[0].balones });
+    return NextResponse.json({
+      oro: rows[0].oro,
+      balones: rows[0].balones,
+      puntuacion_actual: rows[0].puntuacion_actual ?? 0,
+    });
   } catch (error: any) {
     console.error("Error obteniendo economía del manager:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });

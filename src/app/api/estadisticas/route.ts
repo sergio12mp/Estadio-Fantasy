@@ -1,10 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/mysql";
-import  { Estadisticas } from "@/lib/data";
+
+interface Estadisticas {
+    idEstadisticas: number;
+    idPartido: number;
+    idJornada: number;
+    idJugador: number;
+    idEquipo: number;
+    Minutos: number;
+    Goles: number;
+    Asistencias: number;
+    TirosPenalti: number;
+    TirosPenaltiIntentados: number;
+    Disparos: number;
+    DisparosPorteria: number;
+    TarjetasAmarillas: number;
+    TarjetasRojas: number;
+    Toques: number;
+    Entradas: number;
+    Intercepciones: number;
+    Bloqueos: number;
+    GolesEsperados: number;
+    GolesEsperadosSinPenaltis: number;
+    AsistenciasEsperadas: number;
+    AccionesCreadasDeTiro: number;
+    AccionesCreadasDeGol: number;
+    PasesCompletados: number;
+    PasesIntentados: number;
+    PorcentajePasesCompletados: number;
+    PasesProgresivos: number;
+    Controles: number;
+    ConduccionesProgresivas: number;
+    EntradasOfensivas: number;
+    EntradasConExito: number;
+}
 
 export async function GET() {
     try {
-        const result = await db.query("SELECT * FROM mydb.estadisticas") as Estadisticas[];
+        const [result] = await db.query("SELECT * FROM mydb.estadisticas") as [Estadisticas[], any];
         if (!result.length) {
             console.log("No se encontraron estadísticas");
             return NextResponse.json({ message: "No se encontraron estadísticas" }, { status: 404 });
@@ -33,7 +66,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "idPartido, idJornada, idJugador e idEquipo son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query(`
+        const [result] = await db.query(`
             INSERT INTO mydb.estadisticas (
                 idPartido, idJornada, idJugador, idEquipo,
                 Minutos, Goles, Asistencias, TirosPenalti, TirosPenaltiIntentados,
@@ -51,7 +84,7 @@ export async function POST(req: NextRequest) {
             AsistenciasEsperadas, AccionesCreadasDeTiro, AccionesCreadasDeGol, PasesCompletados,
             PasesIntentados, PorcentajePasesCompletados, PasesProgresivos, Controles,
             ConduccionesProgresivas, EntradasOfensivas, EntradasConExito
-        ]) as any;
+        ]) as [any, any];
 
         console.log("Estadísticas insertadas:", result);
         return NextResponse.json({ message: "Estadísticas insertadas exitosamente", result }, { status: 201 });

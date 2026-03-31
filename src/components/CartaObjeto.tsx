@@ -9,7 +9,7 @@ interface CartaObjetoProps {
 
 export default function CartaObjeto({ carta, onEliminar }: CartaObjetoProps) {
     // Aquí puedes usar una imagen para la carta de objeto, si tienes una URL
-    const urlImagen = `/objetos/${carta.idObjetos}.png`;
+    const urlImagen = `/objetos/${carta.Objeto_idObjetoDB}.png`;
 
     return (
         <div className="bg-white rounded-lg shadow-md p-4 text-center transform transition duration-200 hover:scale-105">

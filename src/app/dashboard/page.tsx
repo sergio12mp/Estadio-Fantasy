@@ -15,11 +15,17 @@ export default function DashboardPage() {
   const [mensajeFecha, setMensajeFecha] = useState(""); 
   const [procesandoCSV, setProcesandoCSV] = useState(false);
   const [mensajeCSV, setMensajeCSV] = useState("");
+  const [archivoCSV, setArchivoCSV] = useState<File | null>(null);
 
   const [currencyManagerId, setCurrencyManagerId] = useState("");
   const [oro, setOro] = useState("0");
   const [balones, setBalones] = useState("0");
   const [mensajeMonedas, setMensajeMonedas] = useState("");
+  const [todosManagers, setTodosManagers] = useState<{ idManager: number; Nombre: string; Email: string }[]>([]);
+
+  const [oroTodos, setOroTodos] = useState("0");
+  const [balonesTodos, setBalonesTodos] = useState("0");
+  const [mensajeTodos, setMensajeTodos] = useState("");
 
   useEffect(() => {
     const cargar = async () => {
@@ -29,8 +35,14 @@ export default function DashboardPage() {
       setFechaActual(fechaIso);
       setNuevaFecha(fechaIso);
     };
-
     cargar();
+
+    fetch("/api/manager")
+      .then(r => r.json())
+      .then(data => {
+        if (data.managers) setTodosManagers(data.managers);
+      })
+      .catch(console.error);
   }, []);
 
   const guardarFecha = async () => {
@@ -59,27 +71,49 @@ export default function DashboardPage() {
   };
 
   const ejecutarProcesarCSV = async () => {
+    if (!archivoCSV) {
+      setMensajeCSV("Selecciona un archivo CSV primero.");
+      return;
+    }
     setProcesandoCSV(true);
-    setMensajeCSV(""); 
+    setMensajeCSV("");
 
     try {
+      const formData = new FormData();
+      formData.append("file", archivoCSV);
+
       const res = await fetch("/api/procesarCSV", {
         method: "POST",
+        body: formData,
       });
 
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setMensajeCSV(data.message || "Procesamiento de CSV completado.");
       } else {
-        const data = await res.json();
         setMensajeCSV(data.error || "Error al procesar el CSV.");
-        console.error("Error respuesta API CSV:", data.error);
       }
     } catch (err) {
       setMensajeCSV("Error de red al intentar procesar el CSV.");
       console.error("Error fetch CSV:", err);
     } finally {
       setProcesandoCSV(false);
+    }
+  };
+
+  const distribuirATodos = async () => {
+    setMensajeTodos("");
+    const res = await fetch("/api/currency/all", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deltaOro: Number(oroTodos), deltaBalones: Number(balonesTodos) }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setMensajeTodos(`Monedas repartidas a ${data.affectedRows} managers.`);
+    } else {
+      const data = await res.json();
+      setMensajeTodos(data.error || "Error al repartir monedas.");
     }
   };
 
@@ -107,9 +141,8 @@ export default function DashboardPage() {
 
 
   return (
-    // <RequireAdmin>
-      
-      <div className="min-h-screen bg-gray-50 py-10"> {/* Fondo de página más claro */}
+    <RequireAdmin>
+      <div className="min-h-screen bg-gray-50 py-10">
         <div className="max-w-2xl mx-auto px-4"> {/* Eliminado mt-10 ya que py-10 ya da espacio */}
           <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Panel de Administración</h1>
 
@@ -144,27 +177,39 @@ export default function DashboardPage() {
           {/* Sección de Procesamiento de Datos CSV */}
           <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200 mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">⚙️ Procesamiento de Datos CSV</h2>
-              <p className="text-gray-700 mb-4">Haz clic para importar y procesar los datos del archivo CSV de partidos en la base de datos.</p> {/* Añadido text-gray-700 */}
+              <p className="text-gray-700 mb-4">Selecciona el archivo CSV de partidos e importa los datos en la base de datos.</p>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => setArchivoCSV(e.target.files?.[0] ?? null)}
+                className="block w-full text-sm text-gray-700 mb-4 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
               <button
                   onClick={ejecutarProcesarCSV}
-                  disabled={procesandoCSV}
+                  disabled={procesandoCSV || !archivoCSV}
                   className="bg-green-600 text-white font-medium py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 transition"
               >
                   {procesandoCSV ? "Procesando CSV..." : "Procesar CSV"}
               </button>
-          {mensajeCSV && <p className="mt-3 text-sm text-gray-800">{mensajeCSV}</p>} {/* Añadido text-gray-800 */}
+          {mensajeCSV && <p className="mt-3 text-sm text-gray-800">{mensajeCSV}</p>}
           </div>
 
           <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200 mb-8">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">💰 Añadir monedas</h2>
             <div className="flex flex-col gap-2 mb-2">
-              <label className="text-sm">ID Manager</label>
-              <input
-                type="text"
+              <label className="text-sm">Manager</label>
+              <select
                 value={currencyManagerId}
                 onChange={(e) => setCurrencyManagerId(e.target.value)}
-                className="border px-2 py-1 text-black"
-              />
+                className="border px-2 py-1 text-black rounded"
+              >
+                <option value="">-- Selecciona manager --</option>
+                {todosManagers.map(m => (
+                  <option key={m.idManager} value={m.idManager}>
+                    {m.Nombre || m.Email} (ID: {m.idManager})
+                  </option>
+                ))}
+              </select>
               <label className="text-sm">Oro</label>
               <input
                 type="number"
@@ -185,6 +230,34 @@ export default function DashboardPage() {
           </div>
 
 
+          {/* Sección de Repartir monedas a todos */}
+          <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200 mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">💸 Repartir monedas a todos</h2>
+            <div className="flex flex-col gap-2 mb-2">
+              <label className="text-sm">Oro para cada manager</label>
+              <input
+                type="number"
+                value={oroTodos}
+                onChange={(e) => setOroTodos(e.target.value)}
+                className="border px-2 py-1 text-black rounded"
+              />
+              <label className="text-sm">Balones para cada manager</label>
+              <input
+                type="number"
+                value={balonesTodos}
+                onChange={(e) => setBalonesTodos(e.target.value)}
+                className="border px-2 py-1 text-black rounded"
+              />
+              <button
+                onClick={distribuirATodos}
+                className="mt-2 bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition"
+              >
+                Repartir a todos
+              </button>
+            </div>
+            {mensajeTodos && <p className="text-sm text-gray-800">{mensajeTodos}</p>}
+          </div>
+
           {/* Sección de Obtener estadísticas por jornada */}
           {/* El texto dentro de este div ya tiene un color oscuro por defecto */}
           <div className="bg-white p-6 rounded shadow-md border">
@@ -197,6 +270,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    // </RequireAdmin>
+    </RequireAdmin>
   );
 }

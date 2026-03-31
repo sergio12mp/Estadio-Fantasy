@@ -10,13 +10,20 @@ export async function joinGeneralLeague(idManager: number) {
     try {
         console.log(`INFO: Intentando asignar manager con ID ${idManager} a la liga general.`);
 
-        // 1. Obtener el ID de la liga general
+        // 1. Obtener (o crear) la liga general
         const [ligaGeneralQueryResult]: any = await db.query("SELECT idLigas FROM Ligas WHERE tipo = 'general'");
-        const ligaGeneralId = Array.isArray(ligaGeneralQueryResult) && ligaGeneralQueryResult.length > 0 ? ligaGeneralQueryResult[0].idLigas : null;
+        let ligaGeneralId: number | null =
+            Array.isArray(ligaGeneralQueryResult) && ligaGeneralQueryResult.length > 0
+                ? ligaGeneralQueryResult[0].idLigas
+                : null;
 
         if (!ligaGeneralId) {
-            console.warn("WARN: No se encontró una liga de tipo 'general'. Saltando la asignación.");
-            return;
+            console.log("INFO: No existe liga general. Creándola automáticamente.");
+            const [insertResult]: any = await db.query(
+                "INSERT INTO Ligas (Nombre, Codigo, tipo) VALUES ('Liga General', NULL, 'general')"
+            );
+            ligaGeneralId = insertResult.insertId;
+            console.log(`INFO: Liga general creada con ID: ${ligaGeneralId}`);
         }
 
         // 2. Verificar si el manager ya está en la liga general

@@ -1,17 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/mysql";
-import { Partido } from "@/lib/data";
 
-
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
-        const result = await db.query("SELECT * FROM mydb.partido") as Partido[];
-        if (!result.length) {
-            console.log("No se encontraron partidos");
-            return NextResponse.json({ message: "No se encontraron partidos" }, { status: 404 });
+        const { searchParams } = new URL(req.url);
+        const idJornada = searchParams.get("idJornada");
+
+        let rows: any[];
+        if (idJornada) {
+            const [result] = await db.query(
+                `SELECT P.idPartido, P.idJornada,
+                        EL.Nombre AS NombreLocal,
+                        EV.Nombre AS NombreVisitante
+                 FROM partido AS P
+                 JOIN equipo AS EL ON P.idEquipoLocal = EL.idEquipo
+                 JOIN equipo AS EV ON P.idEquipoVisitante = EV.idEquipo
+                 WHERE P.idJornada = ?
+                 ORDER BY P.idPartido`,
+                [idJornada]
+            ) as [any[], any];
+            rows = result;
+        } else {
+            const [result] = await db.query(
+                `SELECT P.idPartido, P.idJornada,
+                        EL.Nombre AS NombreLocal,
+                        EV.Nombre AS NombreVisitante
+                 FROM partido AS P
+                 JOIN equipo AS EL ON P.idEquipoLocal = EL.idEquipo
+                 JOIN equipo AS EV ON P.idEquipoVisitante = EV.idEquipo
+                 ORDER BY P.idJornada, P.idPartido`
+            ) as [any[], any];
+            rows = result;
         }
-        console.log(result);
-        return NextResponse.json({ message: "Partidos encontrados", result });
+
+        if (!rows.length) {
+            return NextResponse.json({ partidos: [] }, { status: 200 });
+        }
+        return NextResponse.json({ partidos: rows });
     } catch (error) {
         console.error("Error al obtener los partidos:", error);
         return NextResponse.json({ message: "Error al obtener los partidos", error }, { status: 500 });
@@ -26,9 +51,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Todos los campos son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.partido (idJornada, idEquipoLocal, idEquipoVisitante) VALUES (?, ?, ?)", [idJornada, idEquipoLocal, idEquipoVisitante]) as any;
+        const [result] = await db.query(
+            "INSERT INTO partido (idJornada, idEquipoLocal, idEquipoVisitante) VALUES (?, ?, ?)",
+            [idJornada, idEquipoLocal, idEquipoVisitante]
+        ) as [any, any];
 
-        console.log("Partido insertado:", result);
         return NextResponse.json({ message: "Partido insertado exitosamente", result }, { status: 201 });
     } catch (error) {
         console.error("Error insertando partido:", error);

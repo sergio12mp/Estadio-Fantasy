@@ -40,8 +40,8 @@ export async function GetPorteros() {
 export async function GetJugadores() {
 
     
-    const rows: Jugador[] = await db.query("SELECT * FROM mydb.jugador"); // Devuelve RowDataPacket[]
-    const plainRows: any[] = rows.map((row: Jugador) => ({ ...row })); // Crea una copia plana de cada objeto
+    const [rowsResult] = await db.query("SELECT * FROM mydb.jugador") as [Jugador[], any];
+    const plainRows: any[] = rowsResult.map((row: Jugador) => ({ ...row })); // Crea una copia plana de cada objeto
     console.log("GETJUGADORES");    
     console.log(plainRows);
     return plainRows;

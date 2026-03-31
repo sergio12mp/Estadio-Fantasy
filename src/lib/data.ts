@@ -70,6 +70,7 @@ export interface Manager {
     idGoogle: string;
     oro: number;
     balones: number;
+    puntuacion_actual?: number;
 }
 
 // Interfaz para la carta de jugador que posee un Manager (devuelta por /api/cartas-manager)
@@ -95,9 +96,10 @@ export interface CartaObjetoManager {
     NombreObjeto: string;
     DescripcionObjeto: string;
     PrecioObjeto: number;
-    // Otros campos que puedan venir de la tabla 'Objetos', por ejemplo, 'Tipo', 'Efecto'
     TipoObjeto?: string;
     EfectoObjeto?: string;
+    ValorEfecto?: number;
+    EstadisticaObjeto?: string;
 }
 
 // Interfaz para un objeto que ha sido equipado a un jugador
@@ -107,7 +109,7 @@ export interface ObjetoEquipado {
     Rareza: string; // Rareza del objeto
     Tipo?: string; // Tipo del objeto (ej. "Ataque", "Defensa", "Habilidad")
     Efecto?: string; // Descripción del efecto del objeto
-    // Puedes añadir más propiedades relevantes del objeto aquí si las necesitas en el frontend
+    ValorEfecto?: number; // Multiplicador de puntos (1.0 = sin efecto, 2.0 = doble puntos)
 }
 
 // El tipo que el componente PlayerCard y la plantilla realmente van a usar.
@@ -127,6 +129,7 @@ export interface CartaJugadorEnPlantilla {
     objetosEquipados: ObjetoEquipado[]; // ¡Array de objetos equipados en este jugador!
     maxObjetosSlots: number; // Slots disponibles para objetos según la rareza de este jugador
     posicionEnPlantilla: number; // El índice del slot en la plantilla (0-10), crucial para el Map
+    PuntosJornada?: number | null; // Puntos calculados para la jornada seleccionada (null si no calculados aún)
 }
 
 // Función para determinar el número de slots de objeto según la rareza del jugador

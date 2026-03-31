@@ -10,7 +10,7 @@ interface Participaciones {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("SELECT * FROM mydb.participaciones WHERE idManager = ?", [params.id]) as Participaciones[];
+        const [result] = await db.query("SELECT * FROM mydb.participaciones WHERE idManager = ?", [params.id]) as [Participaciones[], any];
         if (!result.length) {
             console.log(`No se encontró la participación con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la participación" }, { status: 404 });
@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "Todos los campos son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("UPDATE mydb.participaciones SET idLigas = ? WHERE idManager = ?", [idLigas, params.id]) as any;
+        const [result] = await db.query("UPDATE mydb.participaciones SET idLigas = ? WHERE idManager = ?", [idLigas, params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró la participación para actualizar" }, { status: 404 });
@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("DELETE FROM mydb.participaciones WHERE idManager = ?", [params.id]) as any;
+        const [result] = await db.query("DELETE FROM mydb.participaciones WHERE idManager = ?", [params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró la participación para eliminar" }, { status: 404 });

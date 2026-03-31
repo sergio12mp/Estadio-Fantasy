@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function GETporPrecio(req: NextRequest) {
     try {
-        const result = await db.query("SELECT * FROM mydb.jugador WHERE Precio > ") as Jugador[];
+        const [result] = await db.query("SELECT * FROM mydb.jugador WHERE Precio > ") as [Jugador[], any];
         if (!result.length) {
             console.log("No se encontraron jugadores");
             return NextResponse.json({ message: "No se encontraron jugadores" }, { status: 404 });
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Todos los campos son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.jugador (Nombre, Edad, Pais, Posicion, Precio, idEquipo) VALUES (?, ?, ?, ?, ?, ?)", [Nombre, Edad, Pais, Posicion, Precio, idEquipo]) as any;
+        const [result] = await db.query("INSERT INTO mydb.jugador (Nombre, Edad, Pais, Posicion, Precio, idEquipo) VALUES (?, ?, ?, ?, ?, ?)", [Nombre, Edad, Pais, Posicion, Precio, idEquipo]) as [any, any];
 
         console.log("Jugador insertado:", result);
         return NextResponse.json({ message: "Jugador insertado exitosamente", result }, { status: 201 });

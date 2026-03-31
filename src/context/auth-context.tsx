@@ -7,17 +7,23 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { User, onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { Manager, getManagerByIdGoogle } from "@/lib/data";
+import { useSession } from "next-auth/react";
+import { Manager } from "@/lib/data";
+
+type SimpleUser = {
+  name: string | null;
+  email: string | null;
+  image: string | null;
+};
 
 type AuthContextType = {
-  user: User | null;
+  user: SimpleUser | null;
   loading: boolean;
   manager: Manager | null;
   setManager: (m: Manager) => void;
   currency: { oro: number; balones: number };
   setCurrency: (c: { oro: number; balones: number }) => void;
+  isAdmin: boolean;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,55 +33,62 @@ const AuthContext = createContext<AuthContextType>({
   setManager: () => {},
   currency: { oro: 0, balones: 0 },
   setCurrency: () => {},
+  isAdmin: false,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const { data: session, status } = useSession();
   const [manager, setManager] = useState<Manager | null>(null);
-  const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState({ oro: 0, balones: 0 });
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
-      console.log("🔥 Firebase user", firebaseUser);
-  
-      if (firebaseUser?.uid) {
-        try {
-          const response = await getManagerByIdGoogle(firebaseUser.uid);
-          console.log("🎯 Manager obtenido:", response);
-          setManager(response.manager); // asegúrate que existe
-        } catch (err) {
-          console.error("❌ Error al obtener el manager:", err);
-          setManager(null);
-        }
-      } else {
-        setManager(null);
+  const loading = status === "loading";
+  const isAdmin = session?.user?.esAdmin === true;
+  const user: SimpleUser | null = session?.user
+    ? {
+        name: session.user.name ?? null,
+        email: session.user.email ?? null,
+        image: session.user.image ?? null,
       }
+    : null;
+
+  useEffect(() => {
+    const managerId = session?.user?.managerId;
+    if (!managerId) {
+      setManager(null);
+      setCurrency({ oro: 0, balones: 0 });
+      return;
+    }
+
+    // Construir el manager desde los datos de sesión + idManager del token
+    setManager({
+      idManager: managerId,
+      nombre: session.user.name ?? "",
+      email: session.user.email ?? "",
+      idGoogle: "",
+      oro: 0,
+      balones: 0,
     });
-  
-    return () => unsubscribe();
-  }, []);
-  
-  useEffect(() => {
-    const loadCurrency = async () => {
-      if (!manager?.idManager) return;
-      try {
-        const res = await fetch(`/api/currency?managerId=${manager.idManager}`);
-        if (res.ok) {
-          const data = await res.json();
-          setCurrency(data);
+
+    // Cargar economía actual desde DB
+    fetch(`/api/manager/economia/${managerId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setCurrency({ oro: data.oro, balones: data.balones });
+          setManager((prev) =>
+            prev
+              ? { ...prev, oro: data.oro, balones: data.balones, puntuacion_actual: data.puntuacion_actual ?? 0 }
+              : prev
+          );
         }
-      } catch (e) {
-        console.error('Error loading currency', e);
-      }
-    };
-    loadCurrency();
-  }, [manager]);
+      })
+      .catch((e) => console.error("Error cargando economía:", e));
+  }, [session]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, manager, setManager, currency, setCurrency }}>
+    <AuthContext.Provider
+      value={{ user, loading, manager, setManager, currency, setCurrency, isAdmin }}
+    >
       {children}
     </AuthContext.Provider>
   );

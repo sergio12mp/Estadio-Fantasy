@@ -8,25 +8,21 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const idGoogle = searchParams.get("idGoogle");
 
+    // Sin parámetros → devolver lista de todos los managers (para admin)
     if (!idGoogle) {
-      return NextResponse.json({ error: "Falta el parámetro idGoogle" }, { status: 400 });
+      const queryResult: any = await db.query("SELECT idManager, Nombre, Email FROM Manager ORDER BY idManager");
+      const managers: any[] = Array.isArray(queryResult[0]) ? queryResult[0] : queryResult;
+      return NextResponse.json({ managers });
     }
 
-    // Extracción robusta de los resultados de la consulta
     const queryResult: any = await db.query("SELECT * FROM Manager WHERE idGoogle = ?", [idGoogle]);
-    const managerRows: any[] = Array.isArray(queryResult[0]) ? queryResult[0] : queryResult; // El array de filas
+    const managerRows: any[] = Array.isArray(queryResult[0]) ? queryResult[0] : queryResult;
 
-    // console.log("DEBUG_GET: Raw query result:", queryResult); // Puedes descomentar para depuración
-    // console.log("DEBUG_GET: Extracted managerRows:", managerRows); // Puedes descomentar para depuración
-
-    if (managerRows.length === 0) { // Si el array de filas está vacío, el manager no existe
-      console.log("✅ Manager NO encontrado: Devolviendo 404.");
+    if (managerRows.length === 0) {
       return NextResponse.json({ found: false }, { status: 404 });
     }
 
-    const manager = managerRows[0]; // Obtenemos el primer (y único) objeto manager
-    console.log("✅ Manager ENCONTRADO:", manager);
-    return NextResponse.json({ found: true, manager });
+    return NextResponse.json({ found: true, manager: managerRows[0] });
   } catch (error: any) {
     console.error("❌ Error en GET /api/manager:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -17,9 +17,10 @@ export async function GET(req: NextRequest) {
         }
 
         const query = `
-            SELECT L.idLigas, L.Nombre, L.Codigo
+            SELECT L.idLigas, L.Nombre, L.Codigo, L.tipo, L.idEquipo, E.Nombre AS NombreEquipo
             FROM Ligas AS L
             JOIN Manager_Ligas AS ML ON L.idLigas = ML.Ligas_idLigas
+            LEFT JOIN Equipo AS E ON L.idEquipo = E.idEquipo
             WHERE ML.Manager_idManager = ?;
         `;
         

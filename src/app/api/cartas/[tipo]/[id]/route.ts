@@ -43,8 +43,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { tipo: str
         return NextResponse.json({ error: 'No se pueden eliminar cartas comunes de jugador' }, { status: 400 });
       }
       await db.query('DELETE FROM CartaJugador WHERE idCartaJugador = ? AND Manager_idManager = ?', [id, managerId]);
-      revalidatePath('/album');//Refrescar cache del álbum
-      return NextResponse.json({ balonesGanados: reward(rareza) });
+      const balGanados = reward(rareza);
+      await db.query('UPDATE Manager SET balones = balones + ? WHERE idManager = ?', [balGanados, managerId]);
+      revalidatePath('/album');
+      return NextResponse.json({ balonesGanados: balGanados });
     } else if (params.tipo === 'objeto') {
       const [rows]: any = await db.query(
         'SELECT rareza FROM CartaObjeto WHERE idCartaObjeto = ? AND idManager = ?',
@@ -54,7 +56,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { tipo: str
       if (!r) return NextResponse.json({ error: 'Carta no encontrada' }, { status: 404 });
       const rareza = r.rareza ?? r.Rareza;
       await db.query('DELETE FROM CartaObjeto WHERE idCartaObjeto = ? AND idManager = ?', [id, managerId]);
-      return NextResponse.json({ balonesGanados: reward(rareza) });
+      const balGanados = reward(rareza);
+      await db.query('UPDATE Manager SET balones = balones + ? WHERE idManager = ?', [balGanados, managerId]);
+      return NextResponse.json({ balonesGanados: balGanados });
     } else {
       return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 });
     }

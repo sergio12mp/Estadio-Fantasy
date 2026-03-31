@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find c:UserssermoDocumentstfgEstadio-Fantasy -type f -name *effect* -o -name *efecto*)",
+      "Bash(grep -r \"ObjectSelectionModal\\\\|ObjectSelection\" /c/Users/sermo/Documents/tfg/Estadio-Fantasy/src --include=*.tsx --include=*.ts)",
+      "Bash(npx tsc:*)",
+      "Bash(find /c/Users/sermo/Documents/tfg/Estadio-Fantasy -maxdepth 3 -not -path */node_modules/* -not -path */.next/* -type d)",
+      "Bash(grep -i \"INSERT INTO \\\\`jugador\\\\`\" \"c:/Users/sermo/Documents/tfg/Estadio-Fantasy/data/import_completo.sql\")"
+    ]
+  }
+}

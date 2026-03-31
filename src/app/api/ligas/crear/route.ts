@@ -3,21 +3,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/mysql"; // Asegúrate de que la ruta a tu conexión de DB sea correcta
 import { v4 as uuidv4 } from 'uuid';
-import { Connection } from "mysql2/promise";
+import { PoolConnection } from "mysql2/promise";
 
 export async function POST(req: NextRequest) {
-    let connection: Connection | null = null;
+    let connection: PoolConnection | null = null;
     try {
-        const { nombreLiga, managerId } = await req.json();
+        const { nombreLiga, managerId, tipo = 'privada', idEquipo = null } = await req.json();
 
         // 1. Validar los datos de entrada
         if (!nombreLiga || !managerId) {
             return NextResponse.json({ message: "Nombre de liga y managerId son requeridos" }, { status: 400 });
         }
-        
+
+        if (!['privada', 'club'].includes(tipo)) {
+            return NextResponse.json({ message: "Tipo de liga inválido. Debe ser 'privada' o 'club'" }, { status: 400 });
+        }
+
+        if (tipo === 'club' && !idEquipo) {
+            return NextResponse.json({ message: "Las ligas de club requieren un equipo (idEquipo)" }, { status: 400 });
+        }
+
         const managerIdNum = parseInt(managerId);
         if (isNaN(managerIdNum)) {
             return NextResponse.json({ message: "managerId no es un número válido" }, { status: 400 });
+        }
+
+        const idEquipoNum = idEquipo ? parseInt(idEquipo) : null;
+        if (idEquipo && isNaN(idEquipoNum!)) {
+            return NextResponse.json({ message: "idEquipo no es un número válido" }, { status: 400 });
         }
 
         // 2. Obtener una conexión del pool y empezar la transacción
@@ -30,10 +43,10 @@ export async function POST(req: NextRequest) {
 
         // 4. Insertar la nueva liga
         const insertLigaQuery = `
-            INSERT INTO Ligas (Nombre, Codigo, tipo)
-            VALUES (?, ?, 'privada');
+            INSERT INTO Ligas (Nombre, Codigo, tipo, idEquipo)
+            VALUES (?, ?, ?, ?);
         `;
-        const [insertLigaResult]: any = await connection.query(insertLigaQuery, [nombreLiga, codigo]);
+        const [insertLigaResult]: any = await connection.query(insertLigaQuery, [nombreLiga, codigo, tipo, idEquipoNum]);
         const newLigaId = insertLigaResult.insertId;
 
         // 5. Asociar el manager (creador) a la nueva liga
@@ -48,12 +61,14 @@ export async function POST(req: NextRequest) {
 
         console.log(`INFO: Liga "${nombreLiga}" creada con éxito por el manager ID: ${managerIdNum}`);
 
-        return NextResponse.json({ 
-            message: "Liga creada con éxito", 
-            liga: { 
-                idLigas: newLigaId, 
-                nombre: nombreLiga, 
-                codigoUnirse: codigo 
+        return NextResponse.json({
+            message: "Liga creada con éxito",
+            liga: {
+                idLigas: newLigaId,
+                nombre: nombreLiga,
+                codigoUnirse: codigo,
+                tipo,
+                idEquipo: idEquipoNum,
             }
         }, { status: 201 });
 

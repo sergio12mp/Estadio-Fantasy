@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/mysql";
-import { Ligas } from "@/lib/data";
+
+interface Ligas {
+    idLigas: number;
+    Nombre: string;
+}
 
 export async function GET() {
     try {
-        const result = await db.query("SELECT * FROM mydb.ligas") as Ligas[];
+        const [result] = await db.query("SELECT * FROM mydb.ligas") as [Ligas[], any];
         if (!result.length) {
             console.log("No se encontraron ligas");
             return NextResponse.json({ message: "No se encontraron ligas" }, { status: 404 });

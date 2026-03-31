@@ -2,10 +2,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/mysql";
-import { Connection } from "mysql2/promise";
+import { PoolConnection } from "mysql2/promise";
 
 export async function POST(req: NextRequest) {
-    let connection: Connection | null = null;
+    let connection: PoolConnection | null = null;
     try {
         const { codigo, managerId } = await req.json();
 

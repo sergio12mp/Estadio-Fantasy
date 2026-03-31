@@ -4,10 +4,24 @@
 import { useAuth } from '@/context/auth-context';
 import RequireAuth from '@/components/RequireAuth';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
+const RAREZA_MAP: Record<string, 'Común' | 'Raro' | 'Épico' | 'Legendario'> = {
+  'comun': 'Común', 'común': 'Común',
+  'raro': 'Raro', 'rara': 'Raro',
+  'epico': 'Épico', 'epica': 'Épico', 'épico': 'Épico', 'épica': 'Épico',
+  'legendario': 'Legendario', 'legendaria': 'Legendario',
+};
+
+function normalizeRareza(r: string): 'Común' | 'Raro' | 'Épico' | 'Legendario' {
+  if (!r) return 'Común';
+  const key = r.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return RAREZA_MAP[key] ?? 'Común';
+}
 import PlayerCard from '@/components/playerCard';
-import PlayerSelectionModal from '@/components/PlayerSelectionModal';
-import ObjectSelectionModal from '@/components/ObjectSelectionModal';
+import PlayerSelectionModal from '@/components/playerSelectionModal';
+import ObjectSelectionModal from '@/components/objectSelectionModal';
 import { useRouter } from 'next/navigation';
+import Toast from '@/components/Toast';
 
 // Asegúrate de que estas interfaces y funciones estén en '@/lib/data'
 import {
@@ -74,6 +88,7 @@ export default function MiEquipo() {
   // TODOS LOS HOOKS (useState, useEffect, useMemo, useCallback) DEBEN IR AQUÍ, AL PRINCIPIO
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const [cartasJugadorManagerDB, setCartasJugadorManagerDB] = useState<CartaJugadorManager[]>([]);
   const [cartasObjetoManagerDB, setCartasObjetoManagerDB] = useState<CartaObjetoManager[]>([]);
@@ -88,9 +103,13 @@ export default function MiEquipo() {
   const [playerForObjectSelection, setPlayerForObjectSelection] = useState<CartaJugadorEnPlantilla | null>(null);
   const [playerIndexForObjectSelection, setPlayerIndexForObjectSelection] = useState<number | null>(null);
 
+  const [modalInitialPlayer, setModalInitialPlayer] = useState<CartaJugadorManager | null>(null);
+  const [modalInitialObjects, setModalInitialObjects] = useState<CartaObjetoManager[]>([]);
+
   const [selectedFormationLabel, setSelectedFormationLabel] = useState<string>(FORMACIONES[0].label);
 
   const [idJornadaActual, setIdJornadaActual] = useState<number | null>(null);
+  const [puntosJornada, setPuntosJornada] = useState<number | null>(null);
 
   const [jornadasDisponibles, setJornadasDisponibles] = useState<number[]>([]);
   const [selectedJornada, setSelectedJornada] = useState<number | null>(null);
@@ -186,6 +205,7 @@ export default function MiEquipo() {
   useEffect(() => {
     const fetchPlantilla = async () => {
       if (!manager || selectedJornada === null) return;
+      setPuntosJornada(null);
       try {
         const resp = await fetch(
           `/api/plantilla?managerId=${manager.idManager}&idJornada=${selectedJornada}`
@@ -201,18 +221,20 @@ export default function MiEquipo() {
         const map = new Map<number, CartaJugadorEnPlantilla>();
         jugadores.forEach((jug: any) => {
           if (jug) {
+            const rarezaNorm = normalizeRareza(jug.Rareza ?? '');
             map.set(jug.posicionEnPlantilla, {
               ...jug,
+              Rareza: rarezaNorm,
+              Edad: jug.Edad?.split('-')[0] ?? jug.Edad ?? '',
               objetosEquipados: jug.objetosEquipados || [],
-              maxObjetosSlots: obtenerSlotsObjetoPorRareza(
-                jug.Rareza as 'Común' | 'Raro' | 'Épico' | 'Legendario'
-              ),
+              maxObjetosSlots: obtenerSlotsObjetoPorRareza(rarezaNorm),
             });
           }
         });
         if (data.plantilla && data.plantilla.Alineacion) {
           setSelectedFormationLabel(data.plantilla.Alineacion);
         }
+        setPuntosJornada(data.plantilla?.Puntos ?? null);
         setPlantillaActual(map);
       } catch (err) {
         console.error('Error al cargar plantilla:', err);
@@ -226,10 +248,28 @@ export default function MiEquipo() {
     posicion: PosicionFrontend,
     slotIndex: number
   ) => {
+    setModalInitialPlayer(null);
+    setModalInitialObjects([]);
     setSelectedPositionForModal(posicion);
     setSelectedSlotIndex(slotIndex);
     setIsPlayerSelectionModalOpen(true);
   }, []);
+
+  const handleReconfigurePlayer = useCallback((
+    player: CartaJugadorEnPlantilla,
+    slotIndex: number,
+    posicion: PosicionFrontend
+  ) => {
+    const matchingCarta = cartasJugadorManagerDB.find(c => c.idCartaJugador === player.idCartaJugador) ?? null;
+    const initObjs = player.objetosEquipados
+      .map(oe => cartasObjetoManagerDB.find(c => c.idCartaObjeto === oe.idCartaObjeto))
+      .filter(Boolean) as CartaObjetoManager[];
+    setModalInitialPlayer(matchingCarta);
+    setModalInitialObjects(initObjs);
+    setSelectedPositionForModal(posicion);
+    setSelectedSlotIndex(slotIndex);
+    setIsPlayerSelectionModalOpen(true);
+  }, [cartasJugadorManagerDB, cartasObjetoManagerDB]);
 
   const handleClosePlayerSelectionModal = useCallback(() => {
     setIsPlayerSelectionModalOpen(false);
@@ -237,65 +277,54 @@ export default function MiEquipo() {
     setSelectedSlotIndex(null);
   }, []);
 
-  // Modificado para manejar la opción de "vaciar slot" y con logs de depuración
-  const handlePlayerSelected = useCallback((selectedPlayer: CartaJugadorManager | null) => {
-    console.log("--- handlePlayerSelected llamado ---");
-    console.log("selectedPlayer recibido:", selectedPlayer ? selectedPlayer.NombreJugador : "null (vaciar slot)");
-    console.log("selectedSlotIndex actual:", selectedSlotIndex);
-    console.log("selectedPositionForModal actual:", selectedPositionForModal);
+  const handlePlayerSelected = useCallback((
+    selectedPlayer: CartaJugadorManager | null,
+    selectedObjects: CartaObjetoManager[] = []
+  ) => {
+    if (selectedSlotIndex === null || selectedPositionForModal === null) return;
 
-    if (selectedSlotIndex === null || selectedPositionForModal === null) {
-      console.error("ERROR: No se pudo seleccionar/vaciar el jugador: slot o posición no definidos.");
-      return;
-    }
-
-    const newPlantilla = new Map(plantillaActual); // Clonar el mapa actual
-    console.log("Tamaño de plantillaActual ANTES de la actualización:", plantillaActual.size);
+    const newPlantilla = new Map(plantillaActual);
 
     if (selectedPlayer === null) {
-      // Si selectedPlayer es null, vaciar el slot
       newPlantilla.delete(selectedSlotIndex);
-      console.log(`Slot ${selectedSlotIndex} marcado para vaciar.`);
     } else {
-      // Si se selecciona un jugador, añadirlo/reemplazarlo
+      const rarezaNorm = normalizeRareza(selectedPlayer.Rareza);
+      const objetosEquipados = selectedObjects.map(o => ({
+        idCartaObjeto: o.idCartaObjeto,
+        Nombre: o.NombreObjeto,
+        Rareza: o.Rareza,
+        Efecto: o.EfectoObjeto,
+        ValorEfecto: o.ValorEfecto,
+      }));
+
       const playerInPlantilla: CartaJugadorEnPlantilla = {
         idCartaJugador: selectedPlayer.idCartaJugador,
         idJugador: selectedPlayer.Jugador_idJugadorDB,
         Nombre: selectedPlayer.NombreJugador,
         Posicion: selectedPlayer.PosicionJugadorDB,
         PosicionFrontend: getPosicionFrontend(selectedPlayer.PosicionJugadorDB),
-        Rareza: selectedPlayer.Rareza as "Común" | "Raro" | "Épico" | "Legendario",
+        Rareza: rarezaNorm,
         Puntos: selectedPlayer.Puntos,
-        Edad: selectedPlayer.Edad,
+        Edad: selectedPlayer.Edad?.split('-')[0] ?? '',
         Pais: selectedPlayer.Pais,
         Precio: selectedPlayer.Precio,
         NombreEquipo: selectedPlayer.NombreEquipo,
-        objetosEquipados: [],
-        maxObjetosSlots: obtenerSlotsObjetoPorRareza(selectedPlayer.Rareza as "Común" | "Raro" | "Épico" | "Legendario"),
+        objetosEquipados,
+        maxObjetosSlots: obtenerSlotsObjetoPorRareza(rarezaNorm),
         posicionEnPlantilla: selectedSlotIndex,
       };
 
-      // Asegurarse de que el jugador no esté ya en otro slot
-      let jugadorExistenteEnOtroSlot = false;
-      plantillaActual.forEach((player, index) => { // Iterar sobre el MAPA ORIGINAL
+      // Remove from another slot if already placed
+      plantillaActual.forEach((player, index) => {
         if (player.idCartaJugador === playerInPlantilla.idCartaJugador && index !== selectedSlotIndex) {
-          newPlantilla.delete(index); // Eliminar del NUEVO MAPA
-          console.log(`Jugador "${player.Nombre}" (ID: ${player.idCartaJugador}) movido del slot ${index} al ${selectedSlotIndex}.`);
-          jugadorExistenteEnOtroSlot = true;
+          newPlantilla.delete(index);
         }
       });
-      if (!jugadorExistenteEnOtroSlot) {
-        console.log(`Jugador "${playerInPlantilla.Nombre}" (ID: ${playerInPlantilla.idCartaJugador}) es nuevo en el slot ${selectedSlotIndex}.`);
-      }
 
-      newPlantilla.set(selectedSlotIndex, playerInPlantilla); // Añadir/actualizar en el NUEVO MAPA
-      console.log(`Jugador "${playerInPlantilla.Nombre}" establecido en el slot ${selectedSlotIndex}.`);
+      newPlantilla.set(selectedSlotIndex, playerInPlantilla);
     }
 
-    setPlantillaActual(newPlantilla); // Actualizar el estado con el nuevo mapa
-    console.log("Tamaño de newPlantilla DESPUÉS de la actualización:", newPlantilla.size);
-    console.log("Contenido de newPlantilla (después de setPlantillaActual):", Array.from(newPlantilla.entries()));
-    console.log("--- Fin handlePlayerSelected ---");
+    setPlantillaActual(newPlantilla);
     handleClosePlayerSelectionModal();
   }, [plantillaActual, selectedSlotIndex, selectedPositionForModal, handleClosePlayerSelectionModal]);
 
@@ -345,22 +374,22 @@ export default function MiEquipo() {
 
   const handleGuardarPlantilla = async () => {
     if (!manager) {
-      alert("No hay un manager autenticado.");
+      setToast({ message: "No hay un manager autenticado.", type: 'error' });
       return;
     }
 
     if (!currentFormation) {
-      alert("Selecciona una alineación válida antes de guardar.");
+      setToast({ message: "Selecciona una alineación válida antes de guardar.", type: 'error' });
       return;
     }
 
     if (selectedJornada === null || idJornadaActual === null) {
-      alert("No se pudo obtener la jornada actual. Inténtalo de nuevo.");
+      setToast({ message: "No se pudo obtener la jornada actual. Inténtalo de nuevo.", type: 'error' });
       return;
     }
 
     if (!isEditingAllowed) {
-      alert("Solo se puede editar la jornada actual.");
+      setToast({ message: "Solo se puede editar la jornada actual.", type: 'error' });
       return;
     }
 
@@ -398,11 +427,11 @@ export default function MiEquipo() {
 
       const result = await response.json();
       console.log("Plantilla guardada exitosamente:", result);
-      alert("¡Plantilla guardada exitosamente!");
+      setToast({ message: "¡Plantilla guardada correctamente!", type: 'success' });
     } catch (error: any) {
       console.error("Error al guardar la plantilla:", error.message);
       setError(`Error al guardar la plantilla: ${error.message}`);
-      alert(`Hubo un error al intentar guardar la plantilla: ${error.message}.`);
+      setToast({ message: `Error al guardar: ${error.message}`, type: 'error' });
     }
   };
 
@@ -426,29 +455,32 @@ export default function MiEquipo() {
                 rowSlots.push(
                     <div
                         key={currentIndex}
-                        className="relative w-28 h-40 border border-gray-600 rounded-lg flex flex-col items-center justify-center m-1 p-1 bg-gray-700 text-white shadow-md"
+                        className="relative w-44 rounded-xl flex flex-col items-center justify-start m-1 p-1 text-white shadow-md border border-white/10"
                     >
                         {currentPlayer ? (
                             <PlayerCard
                                 carta={currentPlayer}
+                                fieldMode
                                 onClick={isEditingAllowed ? () =>
-                                    handleOpenPlayerSelectionModal(posicionFrontend, currentIndex)
+                                    handleReconfigurePlayer(currentPlayer, currentIndex, posicionFrontend)
                                 : undefined}
-                                onEquipObject={isEditingAllowed ? () => {
+                                onEquipObject={() => {
                                     handleOpenObjectSelectionModal(currentPlayer, currentIndex);
-                                } : undefined}
+                                }}
                             />
                         ) : (
-                            <div className="flex flex-col items-center">
-                                <span className="text-lg mb-2">Vacío ({posicionFrontend})</span>
+                            <div className="flex flex-col items-center gap-1 py-2">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-xs font-bold">
+                                    {posicionFrontend}
+                                </div>
                                 {isEditingAllowed && (
                                 <button
-                                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400"
+                                    className="px-3 py-1.5 bg-green-500/80 text-white text-xs rounded-lg hover:bg-green-500 focus:outline-none transition-colors"
                                     onClick={() =>
                                         handleOpenPlayerSelectionModal(posicionFrontend, currentIndex)
                                     }
                                 >
-                                    + Seleccionar
+                                    + Añadir
                                 </button>
                                 )}
                             </div>
@@ -466,7 +498,7 @@ export default function MiEquipo() {
         });
 
         return rows;
-    }, [plantillaActual, currentFormation, handleOpenPlayerSelectionModal, handleOpenObjectSelectionModal, isEditingAllowed]);
+    }, [plantillaActual, currentFormation, handleReconfigurePlayer, handleOpenObjectSelectionModal, isEditingAllowed]);
   // ESTOS RETURNS CONDICIONALES DEBEN IR DESPUÉS DE LA DEFINICIÓN DE TODOS LOS HOOKS.
   if (authLoading || isLoading) {
     return <div className="text-center text-white text-xl mt-8">Cargando equipo...</div>;
@@ -527,22 +559,44 @@ export default function MiEquipo() {
             </button>
           </div>
 
-          <div className="text-lg mb-4 text-center">
-            Jugadores en plantilla: {plantillaActual.size} / {totalSlots}
+          <div className="text-lg mb-4 text-center flex justify-center gap-8">
+            <span>Jugadores en plantilla: {plantillaActual.size} / {totalSlots}</span>
+            {puntosJornada != null && (
+              <span className="text-yellow-400 font-bold">
+                Puntos jornada {selectedJornada}: {puntosJornada}
+              </span>
+            )}
           </div>
 
-          <div className="flex flex-wrap justify-center gap-2">
-            {renderPlantillaSlots}
+          {/* Campo de fútbol */}
+          <div className="relative rounded-2xl overflow-hidden border-4 border-green-600/40"
+            style={{
+              background: 'repeating-linear-gradient(to bottom, #166534, #166534 60px, #15803d 60px, #15803d 120px)',
+            }}
+          >
+            {/* Línea central */}
+            <div className="absolute inset-x-0 top-1/2 h-px bg-white/20" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-white/20" />
+            <div className="py-6 px-4">
+              {renderPlantillaSlots}
+            </div>
           </div>
         </div>
+
+        {toast && (
+          <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />
+        )}
 
         {/* Modal de Selección de Jugador */}
         {isPlayerSelectionModalOpen && selectedPositionForModal && selectedSlotIndex !== null && (
           <PlayerSelectionModal
             position={selectedPositionForModal}
             availablePlayers={availablePlayersForSelection}
+            availableObjects={cartasObjetoManagerDB}
             onClose={handleClosePlayerSelectionModal}
-            onPlayerSelected={handlePlayerSelected}
+            onConfirm={handlePlayerSelected}
+            initialPlayer={modalInitialPlayer}
+            initialObjects={modalInitialObjects}
           />
         )}
 

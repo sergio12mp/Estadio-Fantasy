@@ -1,40 +1,23 @@
 "use client";
 
 import { useAuth } from "@/context/auth-context";
-import { getManagerByIdGoogle } from "@/lib/data";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function RequireAdmin({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const { loading, manager, isAdmin } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      if (!user?.uid) return;
-
-      try {
-        const { manager } = await getManagerByIdGoogle(user.uid);
-
-        if (manager?.esAdmin) {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-          router.push("/"); // o /unauthorized
-        }
-      } catch (err) {
-        console.error("Error al verificar admin:", err);
-        router.push("/login");
-      }
-    };
-
-    if (!loading && user) {
-      checkAdmin();
+    if (loading) return;
+    if (!manager) {
+      router.push("/login");
+    } else if (!isAdmin) {
+      router.push("/");
     }
-  }, [user, loading, router]);
+  }, [loading, manager, isAdmin, router]);
 
-  if (loading || isAdmin === null) {
+  if (loading || !manager || !isAdmin) {
     return <p>Cargando permisos...</p>;
   }
 

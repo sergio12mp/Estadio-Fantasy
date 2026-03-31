@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/mysql";
-import { Participaciones } from "@/lib/data";
+
+interface Participaciones {
+    idParticipaciones: number;
+    idManager: number;
+    idLigas: number;
+}
 
 
 export async function GET() {
     try {
-        const result = await db.query("SELECT * FROM mydb.participaciones") as Participaciones[];
+        const [result] = await db.query("SELECT * FROM mydb.participaciones") as [Participaciones[], any];
         if (!result.length) {
             console.log("No se encontraron participaciones");
             return NextResponse.json({ message: "No se encontraron participaciones" }, { status: 404 });
@@ -26,7 +31,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "idManager y idLigas son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.participaciones (idManager, idLigas) VALUES (?, ?)", [idManager, idLigas]) as any;
+        const [result] = await db.query("INSERT INTO mydb.participaciones (idManager, idLigas) VALUES (?, ?)", [idManager, idLigas]) as [any, any];
 
         console.log("Participación insertada:", result);
         return NextResponse.json({ message: "Participación insertada exitosamente", result }, { status: 201 });

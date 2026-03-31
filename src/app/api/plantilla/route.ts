@@ -34,27 +34,30 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Plantilla no encontrada para la jornada y manager especificados." }, { status: 404 });
         }
 
-        // Luego, obtener los jugadores y objetos asociados a esa plantilla
+        // Luego, obtener los jugadores y objetos asociados a esa plantilla,
+        // incluyendo los puntos calculados de las estadísticas de esa jornada.
         const [jugadoresEnCampoRows]: any = await db.query(
             `SELECT
                 pjo.idCartaJugador,
                 pjo.idCartaObjeto,
                 pjo.posicionEnPlantilla,
                 cj.Rareza AS RarezaCartaJugador,
-                j.idJugador, j.Nombre AS NombreJugador, j.Posicion AS PosicionJugadorDB, j.Edad, j.Pais, j.Precio, j.Puntos,
+                j.idJugador, j.Nombre AS NombreJugador, j.Posicion AS PosicionJugadorDB, j.Edad, j.Pais, j.Precio,
                 e.Nombre AS NombreEquipo,
                 co.Rareza AS RarezaCartaObjeto,
-                o.Nombre AS NombreObjeto, o.Descripcion AS DescripcionObjeto,
-                o.idObjetos AS idObjetos -- Asegúrate de seleccionar idObjetos si lo necesitas en el frontend
+                o.Nombre AS NombreObjeto, o.Descripcion AS DescripcionObjeto, o.ValorEfecto,
+                o.idObjetos AS idObjetos,
+                es.Puntos AS PuntosJornada
              FROM PlantillaJugadorObjeto pjo
              JOIN CartaJugador cj ON pjo.idCartaJugador = cj.idCartaJugador
              JOIN Jugador j ON cj.Jugador_idJugador = j.idJugador
              JOIN Equipo e ON j.idEquipo = e.idEquipo
-             LEFT JOIN CartaObjeto co ON pjo.idCartaObjeto = co.idCartaObjeto -- Usar LEFT JOIN para objetos
-             LEFT JOIN Objetos o ON co.idObjetos = o.idObjetos -- Usar LEFT JOIN para objetos
+             LEFT JOIN CartaObjeto co ON pjo.idCartaObjeto = co.idCartaObjeto
+             LEFT JOIN Objetos o ON co.idObjetos = o.idObjetos
+             LEFT JOIN estadisticas es ON es.idJugador = j.idJugador AND es.idJornada = ?
              WHERE pjo.idPlantilla = ?
              ORDER BY pjo.posicionEnPlantilla`,
-            [plantilla.idPlantilla]
+            [idJornadaNum, plantilla.idPlantilla]
         );
 
         const jugadoresEnCampoData = Array.isArray(jugadoresEnCampoRows[0]) ? jugadoresEnCampoRows[0] : jugadoresEnCampoRows;
@@ -70,13 +73,14 @@ export async function GET(req: NextRequest) {
             PosicionFrontend: getPosicionFrontend(row.PosicionJugadorDB), // <--- ¡USAR getPosicionFrontend aquí!
             NombreEquipo: row.NombreEquipo,
             Rareza: row.RarezaCartaJugador,
-            Puntos: row.Puntos,
+            PuntosJornada: row.PuntosJornada ?? null,
             objetosEquipados: row.idCartaObjeto ? [{
                 idCartaObjeto: row.idCartaObjeto,
                 idObjetos: row.idObjetos,
                 Nombre: row.NombreObjeto,
                 Rareza: row.RarezaCartaObjeto,
                 Descripcion: row.DescripcionObjeto,
+                ValorEfecto: row.ValorEfecto ?? 1.0,
             }] : [],
             maxObjetosSlots: 0, // Esto se calculará en el frontend
             posicionEnPlantilla: row.posicionEnPlantilla,

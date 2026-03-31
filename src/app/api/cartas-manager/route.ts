@@ -28,7 +28,6 @@ export async function GET(req: NextRequest) {
           j.Edad,
           j.Pais,
           j.Precio,
-          j.Puntos, -- <--- ¡Asegúrate de incluir j.Puntos aquí!
           e.Nombre AS NombreEquipo
        FROM CartaJugador cj
        JOIN Jugador j ON cj.Jugador_idJugador = j.idJugador
