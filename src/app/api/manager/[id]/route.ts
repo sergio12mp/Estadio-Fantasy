@@ -1,12 +1,18 @@
 import { db } from "@/lib/mysql";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET /api/manager/[id] → busca por idGoogle
+// GET /api/manager/[id] → busca por idManager (número)
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const idGoogle = params.id;
+    const idManager = Number(params.id);
+    if (isNaN(idManager)) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+    }
 
-    const [rows]: [any[]] = await db.query("SELECT * FROM Manager WHERE idGoogle = ?", [idGoogle]);
+    const [rows] = await db.query(
+      "SELECT * FROM Manager WHERE idManager = ?",
+      [idManager]
+    ) as [any[], any];
 
     if (!rows || rows.length === 0) {
       return NextResponse.json({ error: "Manager no encontrado" }, { status: 404 });
@@ -19,25 +25,28 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+// PUT /api/manager/[id] → actualiza nombre del manager por idManager
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const idGoogle = params.id;
-    const { nombre, email, idGoogle: payloadIdGoogle } = await req.json();
-
-    if (!nombre || !email || !payloadIdGoogle) {
-      return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
+    const idManager = Number(params.id);
+    if (isNaN(idManager)) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
 
-    const result = await db.query(
-      "UPDATE Manager SET nombre = ?, email = ?, idGoogle = ? WHERE idGoogle = ?",
-      [nombre, email, payloadIdGoogle, idGoogle]
+    const { nombre } = await req.json();
+    if (!nombre) {
+      return NextResponse.json({ error: "Falta el campo nombre" }, { status: 400 });
+    }
+
+    const result: any = await db.query(
+      "UPDATE Manager SET Nombre = ? WHERE idManager = ?",
+      [nombre, idManager]
     );
 
-    const affectedRows = (result as any)[0]?.affectedRows ?? 0;
-
+    const affectedRows = result[0]?.affectedRows ?? 0;
     return NextResponse.json({ updated: true, affectedRows });
   } catch (error: any) {
-    console.error("❌ Error en POST /api/manager/[id]:", error.message);
+    console.error("❌ Error en PUT /api/manager/[id]:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

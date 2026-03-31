@@ -1,9 +1,9 @@
 import { db } from "@/lib/mysql";
 
 export async function getSimulatedDate(): Promise<Date> {
-  const [rows]: [any[]] = await db.query(
+  const [rows] = await db.query(
     "SELECT valor FROM Config WHERE clave = 'fecha_actual_simulada'"
-  );
+  ) as [any[], any];
   const row = rows[0];
 
   if (row?.valor) {

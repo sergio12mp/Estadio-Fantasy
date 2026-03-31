@@ -9,12 +9,16 @@ interface Jornada {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("SELECT * FROM mydb.jornada WHERE idJornada = ?", [params.id]) as Jornada[];
+        const param = params.id;
+        const isNumeric = /^\d+$/.test(param);
+        const query = isNumeric
+            ? "SELECT * FROM mydb.jornada WHERE idJornada = ?"
+            : "SELECT * FROM mydb.jornada WHERE Nombre = ?";
+
+        const [result] = await db.query(query, [param]) as [Jornada[], any];
         if (!result.length) {
-            console.log(`No se encontró la jornada con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la jornada" }, { status: 404 });
         }
-        console.log(result);
         return NextResponse.json({ message: "Jornada encontrada", result });
     } catch (error) {
         console.error("Error al obtener la jornada:", error);
@@ -24,20 +28,35 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
     try {
+        const param = params.id;
+        const isNumeric = /^\d+$/.test(param);
         const { Nombre, idTemporada } = await req.json();
 
-        if (!Nombre || !idTemporada) {
-            return NextResponse.json({ message: "Nombre y idTemporada son requeridos" }, { status: 400 });
+        if (isNumeric) {
+            if (!Nombre || !idTemporada) {
+                return NextResponse.json({ message: "Nombre y idTemporada son requeridos" }, { status: 400 });
+            }
+            const result = await db.query(
+                "UPDATE mydb.jornada SET Nombre = ?, idTemporada = ? WHERE idJornada = ?",
+                [Nombre, idTemporada, param]
+            ) as any;
+            if (result.affectedRows === 0) {
+                return NextResponse.json({ message: "No se encontró la jornada para actualizar" }, { status: 404 });
+            }
+        } else {
+            if (!idTemporada) {
+                return NextResponse.json({ message: "idTemporada es requerido" }, { status: 400 });
+            }
+            const result = await db.query(
+                "UPDATE mydb.jornada SET idTemporada = ? WHERE Nombre = ?",
+                [idTemporada, param]
+            ) as any;
+            if (result.affectedRows === 0) {
+                return NextResponse.json({ message: "No se encontró la jornada para actualizar" }, { status: 404 });
+            }
         }
 
-        const result = await db.query("UPDATE mydb.jornada SET Nombre = ?, idTemporada = ? WHERE idJornada = ?", [Nombre, idTemporada, params.id]) as any;
-
-        if (result.affectedRows === 0) {
-            return NextResponse.json({ message: "No se encontró la jornada para actualizar" }, { status: 404 });
-        }
-
-        console.log("Jornada actualizada:", result);
-        return NextResponse.json({ message: "Jornada actualizada exitosamente", result });
+        return NextResponse.json({ message: "Jornada actualizada exitosamente" });
     } catch (error) {
         console.error("Error actualizando jornada:", error);
         return NextResponse.json({ message: "Error actualizando jornada", error }, { status: 500 });
@@ -46,14 +65,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("DELETE FROM mydb.jornada WHERE idJornada = ?", [params.id]) as any;
+        const param = params.id;
+        const isNumeric = /^\d+$/.test(param);
+        const query = isNumeric
+            ? "DELETE FROM mydb.jornada WHERE idJornada = ?"
+            : "DELETE FROM mydb.jornada WHERE Nombre = ?";
 
+        const result = await db.query(query, [param]) as any;
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró la jornada para eliminar" }, { status: 404 });
         }
-
-        console.log("Jornada eliminada:", result);
-        return NextResponse.json({ message: "Jornada eliminada exitosamente", result });
+        return NextResponse.json({ message: "Jornada eliminada exitosamente" });
     } catch (error) {
         console.error("Error eliminando jornada:", error);
         return NextResponse.json({ message: "Error eliminando jornada", error }, { status: 500 });

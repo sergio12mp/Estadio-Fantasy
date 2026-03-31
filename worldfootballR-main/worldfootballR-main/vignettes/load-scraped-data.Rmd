@@ -1,0 +1,228 @@
+---
+title: "Load Scraped Data Functions"
+author: "Jason Zivkovic"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Load Scraped Data Functions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message=FALSE,
+  warning=FALSE
+)
+```
+
+
+## Overview
+
+This package is designed to allow users to extract various world football results and player statistics from the following popular football (soccer) data sites:
+
+* [FBref](https://fbref.com/en/)
+* [Transfermarkt](https://www.transfermarkt.com/)
+* [Understat](https://understat.com/)
+
+
+## Installation
+
+As at 2024-06-29, we are no longer including instructions to install from CRAN. The version pushed to CRAN is very much out of date, and with very regular updates to this library, we advise installing from GitHub only.
+
+You can install the released version of [**```worldfootballR```**](https://github.com/JaseZiv/worldfootballR/) from [GitHub](https://github.com/JaseZiv/worldfootballR) with:
+
+```{r gh-installation, eval=FALSE}
+# install.packages("devtools")
+devtools::install_github("JaseZiv/worldfootballR")
+```
+
+
+```{r load_libs, warning=FALSE, message=FALSE}
+library(worldfootballR)
+library(dplyr)
+```
+
+***
+
+## Usage
+
+Package vignettes have been built to help you get started with the package.
+
+* For functions to extract data from FBref, see [here](https://jaseziv.github.io/worldfootballR/articles/extract-fbref-data.html)
+* For functions to extract data from Transfermarkt, see [here](https://jaseziv.github.io/worldfootballR/articles/extract-transfermarkt-data.html)
+* For functions to extract data from Understat, see [here](https://jaseziv.github.io/worldfootballR/articles/extract-understat-data.html)
+* For functions to extract data for international matches from FBref, see [here](https://jaseziv.github.io/worldfootballR/articles/fbref-data-internationals.html)
+
+This vignette will cover the functions to load scraped data from the [`worldfootballR_data`](https://github.com/JaseZiv/worldfootballR_data) data repository.
+
+**NOTE:**
+
+As of version `0.5.2`, all FBref functions now come with a user-defined pause between page loads to address their new rate limiting. See [this](https://www.sports-reference.com/bot-traffic.html) document for more information.
+
+
+***
+
+## Load FBref
+
+The following section demonstrates the different loading functions of FBref data.
+
+### Load FBref match results
+
+To load pre-scraped match results for all years the data is available, the `load_match_results()` function can be used. This data is scheduled to be updated most days and a print statement will inform the user of when the data was last updated. All domestic leagues are included in the data repository.
+
+This is the load function equivalent of `fb_match_results()`.
+
+```{r load_match_results}
+eng_match_results <- load_match_results(country = "ENG", gender = c("M", "F"), season_end_year = c(2020:2022), tier = "1st")
+dplyr::glimpse(eng_match_results)
+```
+
+
+### Load FBref match results for Cups and International Comps
+
+Similarly, to load pre-scraped match results for cups and international matches in all years the data is available, the `load_match_comp_results()` function can be used. This data is scheduled to be updated most days and a print statement will inform the user of when the data was last updated.
+
+The following list of competitions (`comp_name`) are available:
+
+```{r comp_list, echo=FALSE}
+seasons <- read.csv("https://raw.githubusercontent.com/JaseZiv/worldfootballR_data/master/raw-data/all_leages_and_cups/all_competitions.csv", stringsAsFactors = F)
+
+# the below cups are one off matches so we don't need scores and fixtures for these:
+exclusion_cups <- c("UEFA Super Cup", "FA Community Shield", "Supercopa de España", "Trophée des Champions", "DFL-Supercup", "Supercoppa Italiana")
+
+latest_cup_seasons <- seasons %>%
+  # filtering out things that aren't domestic leagues:
+  filter(!stringr::str_detect(.data$competition_type, "Leagues"),
+         # and also the single match type cup games:
+         !.data$competition_name %in% exclusion_cups) %>%
+  group_by(competition_name) %>% slice_max(season_end_year) %>%
+  distinct() %>%
+  select(competition_type,competition_name,country,gender,governing_body,first_season,last_season,tier)
+
+latest_cup_seasons %>% pull(competition_name)
+```
+
+
+
+
+```{r load_match_comp_results}
+cups <- c("FIFA Women's World Cup","FIFA World Cup")
+world_cups <- load_match_comp_results(comp_name = cups)
+dplyr::glimpse(world_cups)
+```
+
+
+### Load FBref big 5 league advanced season stats
+
+To load pre-scraped advanced stats for the big five European leagues for either teams or players, the `load_fb_big5_advanced_season_stats()` can be used. This data is scheduled to be updated most days and a print statement will inform the user of when the data was last updated.
+
+This is the load function equivalent of `fb_big5_advanced_season_stats()`.
+
+```{r, load_adv_stats}
+all_season_player <- load_fb_big5_advanced_season_stats(stat_type = "defense", team_or_player = "player")
+current_season_player <- load_fb_big5_advanced_season_stats(season_end_year = 2022, stat_type = "defense", team_or_player = "player")
+
+all_season_team <- load_fb_big5_advanced_season_stats(stat_type = "defense", team_or_player = "team")
+current_season_team <- load_fb_big5_advanced_season_stats(season_end_year = 2022, stat_type = "defense", team_or_player = "team")
+```
+
+### Load FBref match shooting
+
+`load_fb_match_shooting()` can be used to load pre-scraped match shooting logs from FBref. This is the load function equivalent of `fb_match_shooting()`. Only a handful of leagues are supported.
+
+```{r load_fb_match_shooting}
+## 2018 - current season for EPL
+epl_match_shooting <- load_fb_match_shooting(
+  country = "ENG",
+  gender = "M",
+  tier = "1st"
+)
+dplyr::glimpse(epl_match_shooting)
+
+## just 2019, for multiple leagues at the same time
+multiple_match_shooting_2019 <- load_fb_match_shooting(
+  country = c("ITA", "FRA"),
+  gender = "M",
+  tier = "1st",
+  season_end_year = 2019
+)
+dplyr::glimpse(multiple_match_shooting_2019)
+```
+
+### Load FBref match summary
+
+`load_fb_match_summary()` can be used to load pre-scraped match summaries from FBref.  This is the load function equivalent of `fb_match_summary()`. Only a handful of leagues are supported.
+
+```{r load_fb_match_summary}
+## 2018 - current season for EPL
+epl_match_summary <- load_fb_match_summary(
+  country = "ENG",
+  gender = "M",
+  tier = "1st"
+)
+dplyr::glimpse(epl_match_summary)
+
+## just 2019, for multiple leagues at the same time
+multiple_match_summary_2019 <- load_fb_match_summary(
+  country = c("ITA", "FRA"),
+  gender = "M",
+  tier = "1st",
+  season_end_year = 2019
+)
+dplyr::glimpse(multiple_match_summary_2019)
+```
+
+### Load FBref advanced match stats
+
+`load_fb_advanced_match_stats()` can be used to load pre-scraped match summaries from FBref. This is the load function equivalent of `fb_advanced_match_stats()`. Not all leagues and stat types are supported.
+
+```{r load_fb_advanced_match_stats}
+## 2018 - current season for EPL
+epl_summary_player_match_stats <- load_fb_advanced_match_stats(
+  country = "ENG",
+  gender = "M",
+  tier = "1st",
+  stat_type = "summary",
+  team_or_player = "player"
+)
+dplyr::glimpse(epl_summary_player_match_stats)
+
+## just 2019, for multiple leagues at the same time
+multiple_defense_player_match_stats_2019 <- load_fb_advanced_match_stats(
+  country = c("ITA", "FRA"),
+  gender = "M",
+  tier = "1st",
+  season_end_year = 2019,
+  stat_type = "defense",
+  team_or_player = "player"
+)
+dplyr::glimpse(multiple_defense_player_match_stats_2019)
+```
+
+
+***
+
+## Load Understat
+
+The following section demonstrates the different loading functions of Understat data.
+
+### Load League Shots
+
+To be able to rapidly load pre-collected chooting locations for whole leagues, the `load_understat_league_shots()` functions is now available. Supported leagues on Understat are:
+
+* "EPL"
+* "La liga"
+* "Bundesliga"
+* "Serie A"
+* "Ligue 1"
+* "RFPL"
+
+This is effectively the loading equivalent of the `understat_league_season_shots()` function, however rather than needing to be scraped a season at a time, this data loads rapidly for all seasons for the selected league since the 2014/15 seasons.
+
+```{r load_understat_league_shots}
+serie_a_shot_locations <- load_understat_league_shots(league = "Serie A")
+dplyr::glimpse(serie_a_shot_locations)
+```

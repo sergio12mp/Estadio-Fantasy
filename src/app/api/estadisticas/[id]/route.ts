@@ -37,7 +37,7 @@ interface Estadisticas {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("SELECT * FROM mydb.estadisticas WHERE idEstadisticas = ?", [params.id]) as Estadisticas[];
+        const [result] = await db.query("SELECT * FROM mydb.estadisticas WHERE idEstadisticas = ?", [params.id]) as [Estadisticas[], any];
         if (!result.length) {
             console.log(`No se encontró la estadística con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la estadística" }, { status: 404 });
@@ -66,7 +66,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "idPartido, idJornada, idJugador e idEquipo son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query(`
+        const [result] = await db.query(`
             UPDATE mydb.estadisticas SET
                 idPartido = ?, idJornada = ?, idJugador = ?, idEquipo = ?,
                 Minutos = ?, Goles = ?, Asistencias = ?, TirosPenalti = ?, TirosPenaltiIntentados = ?,
@@ -85,7 +85,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             PasesIntentados, PorcentajePasesCompletados, PasesProgresivos, Controles,
             ConduccionesProgresivas, EntradasOfensivas, EntradasConExito,
             params.id
-        ]) as any;
+        ]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró la estadística para actualizar" }, { status: 404 });
@@ -101,7 +101,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("DELETE FROM mydb.estadisticas WHERE idEstadisticas = ?", [params.id]) as any;
+        const [result] = await db.query("DELETE FROM mydb.estadisticas WHERE idEstadisticas = ?", [params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró la estadística para eliminar" }, { status: 404 });

@@ -3,55 +3,75 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { db } from "@/lib/mysql";
-import { joinGeneralLeague } from "./liga-utils"; // <-- Importamos la nueva función
+import { joinGeneralLeague } from "./liga-utils";
+import { fillCommonCardsForManager } from "./card-utils";
 
 export const authConfig: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      authorization: {
-        params: {
-          scope: "openid profile email",
-        },
-      },
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       try {
-        if (account.provider === "google") {
-          // Query the database for a user with the given email
-          const [dbUser]: any = await db.query("SELECT * FROM mydb.Manager WHERE Email = ?", [user?.email]);
-          let managerId;
+        if (account?.provider === "google") {
+          const [dbUser]: any = await db.query(
+            "SELECT * FROM Manager WHERE Email = ?",
+            [user?.email]
+          );
+          let managerId: number;
 
           if (Array.isArray(dbUser) && dbUser.length === 0) {
-            // Si el usuario no existe, lo insertamos en la base de datos
             const result: any = await db.query(
-              "INSERT INTO mydb.Manager (Nombre, idGoogle, Email) VALUES (?, ?, ?)",
+              "INSERT INTO Manager (Nombre, idGoogle, Email, oro, balones) VALUES (?, ?, ?, 1000, 10)",
               [user.name, user.id, user.email]
             );
-            managerId = result.insertId;
+            managerId = result[0].insertId;
             console.log(`INFO: Nuevo manager creado con ID: ${managerId}`);
-            
+
+            try {
+              await fillCommonCardsForManager(managerId);
+            } catch (cardError) {
+              console.error("Error creando cartas comunes:", cardError);
+            }
           } else {
-            // Si el usuario existe, obtenemos su ID
             managerId = Array.isArray(dbUser) ? dbUser[0].idManager : dbUser.idManager;
             console.log("INFO: El manager ya existe en la base de datos.");
           }
 
-          // ASIGNAR EL MANAGER A LA LIGA GENERAL
           if (managerId) {
-             await joinGeneralLeague(managerId); // <-- Llamamos a la nueva función
+            await joinGeneralLeague(managerId);
           }
-          
         }
-        return true; // Retorna true para continuar el proceso de inicio de sesión
+        return true;
       } catch (error) {
         console.error("Error durante el sign-in:", error);
-        return false; // Retorna false si hay un error para detener el sign-in
+        return false;
       }
     },
-    // Añade el resto de tus callbacks aquí si los tienes
+    async jwt({ token, account }) {
+      if (token.email) {
+        const [rows]: any = await db.query(
+          "SELECT idManager, esAdmin FROM Manager WHERE Email = ?",
+          [token.email]
+        );
+        if (Array.isArray(rows) && rows.length > 0) {
+          token.managerId = rows[0].idManager as number;
+          token.esAdmin = !!rows[0].esAdmin;
+        }
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token.managerId) {
+        session.user.managerId = token.managerId;
+      }
+      if (token.esAdmin !== undefined) {
+        session.user.esAdmin = token.esAdmin as boolean;
+      }
+      return session;
+    },
   },
 };

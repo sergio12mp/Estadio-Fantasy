@@ -5,7 +5,7 @@ import { Jugador } from "@/lib/data";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("SELECT * FROM mydb.jugador WHERE idJugador = ?", [params.id]) as Jugador[];
+        const [result] = await db.query("SELECT * FROM mydb.jugador WHERE idJugador = ?", [params.id]) as [Jugador[], any];
         if (!result.length) {
             console.log(`No se encontró el jugador con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró el jugador" }, { status: 404 });
@@ -26,7 +26,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "Todos los campos son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("UPDATE mydb.jugador SET Nombre = ?, Edad = ?, Pais = ?, Posicion = ?, Precio = ?, idEquipo = ? WHERE idJugador = ?", [Nombre, Edad, Pais, Posicion, Precio, idEquipo, params.id]) as any;
+        const [result] = await db.query("UPDATE mydb.jugador SET Nombre = ?, Edad = ?, Pais = ?, Posicion = ?, Precio = ?, idEquipo = ? WHERE idJugador = ?", [Nombre, Edad, Pais, Posicion, Precio, idEquipo, params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró el jugador para actualizar" }, { status: 404 });
@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("DELETE FROM mydb.jugador WHERE idJugador = ?", [params.id]) as any;
+        const [result] = await db.query("DELETE FROM mydb.jugador WHERE idJugador = ?", [params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró el jugador para eliminar" }, { status: 404 });

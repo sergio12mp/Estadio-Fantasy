@@ -8,7 +8,7 @@ interface Equipo {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("SELECT * FROM mydb.equipo WHERE idEquipo = ?", [params.id]) as Equipo[];
+        const [result] = await db.query("SELECT * FROM mydb.equipo WHERE idEquipo = ?", [params.id]) as [Equipo[], any];
         if (!result.length) {
             console.log(`No se encontró el equipo con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró el equipo" }, { status: 404 });
@@ -29,7 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "Nombre es requerido" }, { status: 400 });
         }
 
-        const result = await db.query("UPDATE mydb.equipo SET Nombre = ? WHERE idEquipo = ?", [Nombre, params.id]) as any;
+        const [result] = await db.query("UPDATE mydb.equipo SET Nombre = ? WHERE idEquipo = ?", [Nombre, params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró el equipo para actualizar" }, { status: 404 });
@@ -45,7 +45,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const result = await db.query("DELETE FROM mydb.equipo WHERE idEquipo = ?", [params.id]) as any;
+        const [result] = await db.query("DELETE FROM mydb.equipo WHERE idEquipo = ?", [params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró el equipo para eliminar" }, { status: 404 });

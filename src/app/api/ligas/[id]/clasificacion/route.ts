@@ -23,10 +23,24 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         
         console.log(`INFO: Obteniendo clasificación para la liga ID: ${ligaIdNum}`);
 
-        // 2. Consulta de la base de datos para la clasificación
-        // Esta consulta usa tu tabla Manager_Ligas y la columna puntuacion_actual
+        // 2. Obtener info de la liga (tipo, equipo) junto con la clasificación
+        const [ligaInfo]: any = await db.query(
+            `SELECT L.tipo, L.idEquipo, E.Nombre AS NombreEquipo
+             FROM Ligas AS L
+             LEFT JOIN Equipo AS E ON L.idEquipo = E.idEquipo
+             WHERE L.idLigas = ?`,
+            [ligaIdNum]
+        );
+
+        if (!ligaInfo || (Array.isArray(ligaInfo) && ligaInfo.length === 0)) {
+            return NextResponse.json({ message: "Liga no encontrada", clasificacion: [] }, { status: 404 });
+        }
+
+        const liga = Array.isArray(ligaInfo) ? ligaInfo[0] : ligaInfo;
+
+        // 3. Consulta de la base de datos para la clasificación
         const query = `
-            SELECT 
+            SELECT
                 m.idManager,
                 m.nombre AS nombreManager,
                 ml.puntuacion_actual
@@ -35,17 +49,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             WHERE ml.Ligas_idLigas = ?
             ORDER BY ml.puntuacion_actual DESC;
         `;
-        
-        const [clasificacionQueryResult]: [Clasificacion[], any] = await db.query(query, [ligaIdNum]);
+
+        const [clasificacionQueryResult] = await db.query(query, [ligaIdNum]) as [Clasificacion[], any];
         const clasificacion = Array.isArray(clasificacionQueryResult) ? clasificacionQueryResult : [];
 
         if (clasificacion.length === 0) {
             console.log(`INFO: No se encontró clasificación para la liga ID: ${ligaIdNum}`);
-            return NextResponse.json({ message: "No se encontró clasificación", clasificacion: [] }, { status: 200 });
+            return NextResponse.json({ message: "No se encontró clasificación", clasificacion: [], liga }, { status: 200 });
         }
 
         console.log(`INFO: Clasificación encontrada para la liga ID: ${ligaIdNum}`);
-        return NextResponse.json({ clasificacion }, { status: 200 });
+        return NextResponse.json({ clasificacion, liga }, { status: 200 });
 
     } catch (error: any) {
         console.error(`Error en /api/ligas/${params.id}/clasificacion:`, error);

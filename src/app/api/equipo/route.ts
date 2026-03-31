@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Nombre es requerido" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.equipo (Nombre) VALUES (?)", [Nombre]) as any;
+        const [result] = await db.query("INSERT INTO mydb.equipo (Nombre) VALUES (?)", [Nombre]) as [any, any];
 
         console.log("Equipo insertado:", result);
         return NextResponse.json({ message: "Equipo insertado exitosamente", result }, { status: 201 });

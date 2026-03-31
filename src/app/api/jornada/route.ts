@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/mysql";
-import { Jornada } from "@/lib/data";
+
+interface Jornada {
+    idJornada: number;
+    Nombre: string;
+    idTemporada: number;
+}
 
 export async function GET() {
     try {
-        const result = await db.query("SELECT * FROM mydb.jornada") as Jornada[];
+        const [result] = await db.query("SELECT * FROM mydb.jornada") as [Jornada[], any];
         if (!result.length) {
             console.log("No se encontraron jornadas");
             return NextResponse.json({ message: "No se encontraron jornadas" }, { status: 404 });
         }
-        console.log(result);
         return NextResponse.json({ message: "Jornadas encontradas", result });
     } catch (error) {
         console.error("Error al obtener las jornadas:", error);
