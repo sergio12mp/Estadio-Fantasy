@@ -10,7 +10,7 @@ interface PlantillaJugadorObjeto {
 
 export async function GET() {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.plantillajugadorobjeto") as [PlantillaJugadorObjeto[], any];
+        const [result] = await db.query("SELECT * FROM PlantillaJugadorObjeto") as [PlantillaJugadorObjeto[], any];
         if (!result.length) {
             console.log("No se encontraron relaciones Plantilla-Jugador-Objeto");
             return NextResponse.json({ message: "No se encontraron relaciones Plantilla-Jugador-Objeto" }, { status: 404 });
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "idPlantilla, idJugador e idObjetos son requeridos" }, { status: 400 });
         }
 
-        const [result] = await db.query("INSERT INTO mydb.plantillajugadorobjeto (idPlantilla, idJugador, idObjetos) VALUES (?, ?, ?)", [idPlantilla, idJugador, idObjetos]) as [any, any];
+        const [result] = await db.query("INSERT INTO PlantillaJugadorObjeto (idPlantilla, idJugador, idObjetos) VALUES (?, ?, ?)", [idPlantilla, idJugador, idObjetos]) as [any, any];
 
         console.log("Relación Plantilla-Jugador-Objeto insertada:", result);
         return NextResponse.json({ message: "Relación Plantilla-Jugador-Objeto insertada exitosamente", result }, { status: 201 });

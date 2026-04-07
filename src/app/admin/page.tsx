@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import RequireAuth from "@/components/RequireAuth";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -41,18 +41,175 @@ function AdminContent() {
     }
   };
 
+  // Bots
+  const [seedingBots, setSeedingBots] = useState(false);
+  const [seedStatus, setSeedStatus] = useState<string | null>(null);
+  const [settingBotPlantilla, setSettingBotPlantilla] = useState(false);
+  const [botPlantillaStatus, setBotPlantillaStatus] = useState<string | null>(null);
+  const [idJornadaBots, setIdJornadaBots] = useState("");
+
+  const [gastingBots, setGastingBots] = useState(false);
+  const [gastStatus, setGastStatus] = useState<string | null>(null);
+
+  const handleGastarBots = async () => {
+    setGastingBots(true);
+    setGastStatus(null);
+    try {
+      const res = await fetch("/api/bots/gastar", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        const detalle = data.resumen?.map((b: any) => `${b.nombre}: ${b.sobresAbiertos} sobres`).join(", ");
+        setGastStatus(`✅ ${data.message}. ${detalle}`);
+      } else {
+        setGastStatus(`❌ Error: ${data.error ?? "Error desconocido"}`);
+      }
+    } catch (err: any) {
+      setGastStatus(`❌ Error de red: ${err.message}`);
+    } finally {
+      setGastingBots(false);
+    }
+  };
+
+  const handleSeedBots = async () => {
+    setSeedingBots(true);
+    setSeedStatus(null);
+    try {
+      const res = await fetch("/api/bots/seed", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) setSeedStatus(`✅ ${data.message}: ${data.bots?.join(", ")}`);
+      else setSeedStatus(`❌ Error: ${data.error ?? "Error desconocido"}`);
+    } catch (err: any) {
+      setSeedStatus(`❌ Error de red: ${err.message}`);
+    } finally {
+      setSeedingBots(false);
+    }
+  };
+
+  const handleSetBotPlantilla = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const id = parseInt(idJornadaBots);
+    if (!id || isNaN(id)) return;
+    setSettingBotPlantilla(true);
+    setBotPlantillaStatus(null);
+    try {
+      const res = await fetch("/api/bots/set-plantilla", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idJornada: id }),
+      });
+      const data = await res.json();
+      if (res.ok) setBotPlantillaStatus(`✅ ${data.message} (criterio: ${data.criterio}, bots asignados: ${data.botsAsignados})`);
+      else setBotPlantillaStatus(`❌ Error: ${data.error ?? "Error desconocido"}`);
+    } catch (err: any) {
+      setBotPlantillaStatus(`❌ Error de red: ${err.message}`);
+    } finally {
+      setSettingBotPlantilla(false);
+    }
+  };
+
+  // Gestión de jornada actual
+  const [jornadaActual, setJornadaActual] = useState<{ idJornada: number; nombre: string } | null>(null);
+  const [jornadasDisponibles, setJornadasDisponibles] = useState<{ idJornada: number; Nombre: string }[]>([]);
+  const [jornadaSeleccionada, setJornadaSeleccionada] = useState("");
+  const [settingJornada, setSettingJornada] = useState(false);
+  const [setJornadaStatus, setSetJornadaStatus] = useState<string | null>(null);
+  const [avanzando, setAvanzando] = useState(false);
+  const [avanzarStatus, setAvanzarStatus] = useState<string | null>(null);
+
+  const cargarJornadaActual = async () => {
+    try {
+      const res = await fetch("/api/config/jornada-actual");
+      if (res.ok) {
+        const data = await res.json();
+        setJornadaActual(data);
+        setJornadaSeleccionada(String(data.idJornada));
+      }
+    } catch {}
+  };
+
+  const cargarJornadasDisponibles = async () => {
+    try {
+      const res = await fetch("/api/jornada");
+      if (res.ok) {
+        const data = await res.json();
+        setJornadasDisponibles(data.result ?? []);
+      }
+    } catch {}
+  };
+
+  // Cargar al montar
+  useEffect(() => {
+    cargarJornadaActual();
+    cargarJornadasDisponibles();
+  }, []);
+
+  const handleSetJornada = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jornadaSeleccionada) return;
+    setSettingJornada(true);
+    setSetJornadaStatus(null);
+    try {
+      const res = await fetch("/api/config/jornada-actual", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idJornada: parseInt(jornadaSeleccionada) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSetJornadaStatus(`✅ Jornada actual: ${data.nombre} (ID ${data.idJornada})`);
+        setJornadaActual({ idJornada: data.idJornada, nombre: data.nombre });
+      } else {
+        setSetJornadaStatus(`❌ ${data.error}`);
+      }
+    } catch (err: any) {
+      setSetJornadaStatus(`❌ Error de red: ${err.message}`);
+    } finally {
+      setSettingJornada(false);
+    }
+  };
+
+  const handleAvanzarJornada = async () => {
+    if (!confirm(`¿Calcular puntos de "${jornadaActual?.nombre}" y avanzar a la siguiente jornada?`)) return;
+    setAvanzando(true);
+    setAvanzarStatus(null);
+    try {
+      const res = await fetch("/api/jornada/avanzar", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        const msg = data.hayMasJornadas
+          ? `✅ ${data.message} (${data.plantillasProcesadas} plantillas calculadas)`
+          : `✅ ${data.message} — última jornada alcanzada.`;
+        setAvanzarStatus(msg);
+        await cargarJornadaActual();
+      } else {
+        setAvanzarStatus(`❌ ${data.error}`);
+      }
+    } catch (err: any) {
+      setAvanzarStatus(`❌ Error de red: ${err.message}`);
+    } finally {
+      setAvanzando(false);
+    }
+  };
+
   // Calcular jornada
   const [idJornada, setIdJornada] = useState("");
   const [calcStatus, setCalcStatus] = useState<string | null>(null);
   const [calculating, setCalculating] = useState(false);
 
-  const CHUNK_ROWS = 400;
+  const CHUNK_ROWS = 80;
 
   async function sendCSVChunk(csvText: string, fieldName: "file" | "filePorteros"): Promise<{ filas: number; filasPorteros?: number }> {
     const blob = new Blob([csvText], { type: "text/csv" });
     const formData = new FormData();
     formData.append(fieldName, blob, "chunk.csv");
-    const res = await fetch("/api/procesarCSV", { method: "POST", body: formData });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 55_000);
+    let res: Response;
+    try {
+      res = await fetch("/api/procesarCSV", { method: "POST", body: formData, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? data.message ?? `HTTP ${res.status}`);
     return data;
@@ -184,6 +341,132 @@ function AdminContent() {
               {fillStatus}
             </p>
           )}
+        </Section>
+
+        <Section title="Gestión de Bots">
+          <p className="text-sm text-gray-500 mb-4">
+            Crea los managers bot y asígnales plantillas automáticas antes de calcular cada jornada.
+          </p>
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="text-xs font-semibold text-gray-600 mb-1">1. Crear bots (solo una vez)</p>
+              <button
+                onClick={handleSeedBots}
+                disabled={seedingBots}
+                className="bg-orange-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {seedingBots ? "Creando..." : "Crear Bots"}
+              </button>
+              {seedStatus && (
+                <p className={`mt-2 text-sm font-medium ${seedStatus.startsWith("✅") ? "text-green-700" : "text-red-600"}`}>
+                  {seedStatus}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-600 mb-1">2. Gastar oro de bots en sobres normales</p>
+              <button
+                onClick={handleGastarBots}
+                disabled={gastingBots}
+                className="bg-yellow-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {gastingBots ? "Abriendo sobres..." : "Gastar Oro de Bots"}
+              </button>
+              {gastStatus && (
+                <p className={`mt-2 text-sm font-medium ${gastStatus.startsWith("✅") ? "text-green-700" : "text-red-600"}`}>
+                  {gastStatus}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-600 mb-1">3. Establecer plantillas de bots para una jornada</p>
+              <form onSubmit={handleSetBotPlantilla} className="flex gap-3 items-end">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ID de Jornada</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={idJornadaBots}
+                    onChange={(e) => setIdJornadaBots(e.target.value)}
+                    placeholder="Ej: 1"
+                    className="w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={!idJornadaBots || settingBotPlantilla}
+                  className="bg-orange-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {settingBotPlantilla ? "Asignando..." : "Establecer Plantillas"}
+                </button>
+              </form>
+              {botPlantillaStatus && (
+                <p className={`mt-2 text-sm font-medium ${botPlantillaStatus.startsWith("✅") ? "text-green-700" : "text-red-600"}`}>
+                  {botPlantillaStatus}
+                </p>
+              )}
+            </div>
+          </div>
+        </Section>
+
+        <Section title="Jornada Actual">
+          <p className="text-sm text-gray-500 mb-4">
+            Controla qué jornada ven los managers al construir su plantilla. Al avanzar, se calculan automáticamente los puntos de la jornada completada.
+          </p>
+          {jornadaActual && (
+            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+              <p className="text-sm font-semibold text-blue-800">
+                Jornada actual: <span className="font-bold">{jornadaActual.nombre}</span>{" "}
+                <span className="text-blue-500">(ID {jornadaActual.idJornada})</span>
+              </p>
+            </div>
+          )}
+          <div className="flex flex-col gap-4">
+            <form onSubmit={handleSetJornada} className="flex gap-3 items-end flex-wrap">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Establecer jornada actual</label>
+                <select
+                  value={jornadaSeleccionada}
+                  onChange={(e) => setJornadaSeleccionada(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  <option value="">— Selecciona —</option>
+                  {jornadasDisponibles.map((j) => (
+                    <option key={j.idJornada} value={j.idJornada}>
+                      {j.Nombre} (ID {j.idJornada})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={!jornadaSeleccionada || settingJornada}
+                className="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {settingJornada ? "Guardando..." : "Establecer"}
+              </button>
+            </form>
+            {setJornadaStatus && (
+              <p className={`text-sm font-medium ${setJornadaStatus.startsWith("✅") ? "text-green-700" : "text-red-600"}`}>
+                {setJornadaStatus}
+              </p>
+            )}
+            <div>
+              <p className="text-xs font-semibold text-gray-600 mb-1">Calcular jornada actual y avanzar a la siguiente</p>
+              <button
+                onClick={handleAvanzarJornada}
+                disabled={avanzando || !jornadaActual}
+                className="bg-green-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {avanzando ? "Calculando y avanzando..." : "⏭ Avanzar jornada"}
+              </button>
+            </div>
+            {avanzarStatus && (
+              <p className={`text-sm font-medium ${avanzarStatus.startsWith("✅") ? "text-green-700" : "text-red-600"}`}>
+                {avanzarStatus}
+              </p>
+            )}
+          </div>
         </Section>
 
         <Section title="Calcular Puntuación de Jornada">

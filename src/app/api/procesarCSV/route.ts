@@ -3,6 +3,8 @@ import { Readable } from 'stream';
 import csv from 'csv-parser';
 import { db } from "@/lib/mysql";
 
+export const maxDuration = 60; // segundos (requiere Vercel Pro; en Hobby el límite es 10s)
+
 async function parseCSVFromBuffer(buffer: Buffer): Promise<any[]> {
     return new Promise((resolve, reject) => {
         const rows: any[] = [];

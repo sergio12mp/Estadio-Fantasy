@@ -9,7 +9,7 @@ interface PlantillaJugadorObjeto {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.plantillajugadorobjeto WHERE idPlantilla = ? AND idJugador = ?", [params.id]) as [PlantillaJugadorObjeto[], any];
+        const [result] = await db.query("SELECT * FROM PlantillaJugadorObjeto WHERE idPlantilla = ? AND idJugador = ?", [params.id]) as [PlantillaJugadorObjeto[], any];
         if (!result.length) {
             console.log(`No se encontró la relación Plantilla-Jugador-Objeto con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la relación Plantilla-Jugador-Objeto" }, { status: 404 });
@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "idPlantilla, idJugador e idObjetos son requeridos" }, { status: 400 });
         }
 
-        const [result] = await db.query("UPDATE mydb.plantillajugadorobjeto SET idPlantilla = ?, idJugador = ?, idObjetos = ? WHERE idPlantilla = ? AND idJugador = ?", [idPlantilla, idJugador, idObjetos, params.id]) as [any, any];
+        const [result] = await db.query("UPDATE PlantillaJugadorObjeto SET idPlantilla = ?, idJugador = ?, idObjetos = ? WHERE idPlantilla = ? AND idJugador = ?", [idPlantilla, idJugador, idObjetos, params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró la relación Plantilla-Jugador-Objeto para actualizar" }, { status: 404 });
@@ -46,7 +46,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const [result] = await db.query("DELETE FROM mydb.plantillajugadorobjeto WHERE idPlantilla = ? AND idJugador = ?", [params.id]) as [any, any];
+        const [result] = await db.query("DELETE FROM PlantillaJugadorObjeto WHERE idPlantilla = ? AND idJugador = ?", [params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró la relación Plantilla-Jugador-Objeto para eliminar" }, { status: 404 });

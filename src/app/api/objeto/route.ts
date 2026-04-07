@@ -11,7 +11,7 @@ interface Objetos {
 
 export async function GET() {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.objetos") as [Objetos[], any];
+        const [result] = await db.query("SELECT * FROM Objetos") as [Objetos[], any];
         if (!result.length) {
             console.log("No se encontraron objetos");
             return NextResponse.json({ message: "No se encontraron objetos" }, { status: 404 });
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Nombre, Precio y Descripcion son requeridos" }, { status: 400 });
         }
 
-        const [result] = await db.query("INSERT INTO mydb.objetos (Nombre, Precio, Descripcion) VALUES (?, ?, ?)", [Nombre, Precio, Descripcion]) as [any, any];
+        const [result] = await db.query("INSERT INTO Objetos (Nombre, Precio, Descripcion) VALUES (?, ?, ?)", [Nombre, Precio, Descripcion]) as [any, any];
 
         console.log("Objeto insertado:", result);
         return NextResponse.json({ message: "Objeto insertado exitosamente", result }, { status: 201 });

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Carta } from '@/app/album/page';
 
 interface AlbumPlayerCardProps {
@@ -85,7 +86,16 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
                         </div>
                     )}
 
-                    <div className="mt-auto">
+                    <div className="mt-auto flex flex-col gap-1">
+                        {carta.jugadorId && (
+                            <Link
+                                href={`/jugador/${carta.jugadorId}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full py-1.5 text-center bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            >
+                                Ver estadísticas
+                            </Link>
+                        )}
                         {!isComun && (
                             <div className="flex flex-col gap-1">
                                 <p className="text-xs text-center text-gray-400">Venta: <span className="font-semibold text-gray-600">{valorVenta} 🏐</span></p>
@@ -160,6 +170,14 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
                                 )}
                             </div>
 
+                            {carta.jugadorId && (
+                                <Link
+                                    href={`/jugador/${carta.jugadorId}`}
+                                    className="block w-full mt-2 py-2 text-center bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                >
+                                    Ver estadísticas por jornada →
+                                </Link>
+                            )}
                             <button
                                 onClick={() => setShowModal(false)}
                                 className="w-full mt-2 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-200 transition-colors font-medium"

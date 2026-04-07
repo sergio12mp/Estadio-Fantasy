@@ -4,7 +4,7 @@ import { db } from "@/lib/mysql";
 
 export async function GET(req: NextRequest, {params}: {params: {id: string}}) {
     try{
-        const result = await db.query("SELECT * FROM mydb.ligas WHERE idLigas = ?", [params.id]);
+        const result = await db.query("SELECT * FROM Ligas WHERE idLigas = ?", [params.id]);
         if (!result) {
             console.log("No se encontraron ligas");
             return NextResponse.json({ message: "No se encontraron ligas" }, { status: 404 });
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, {params}: {params: {id: string}}) {
 
 export async function DELETE(req: NextRequest, {params}: {params: {id: string}}) {
     try{
-        const result = await db.query("DELETE FROM mydb.ligas WHERE idLigas = ?", [params.id]);
+        const result = await db.query("DELETE FROM Ligas WHERE idLigas = ?", [params.id]);
         if (!result) {
             console.log("No se encontraron ligas");
             return NextResponse.json({ message: "No se encontraron ligas" }, { status: 404 });
@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest, {params}: {params: {id: string}}) {
         if (!Nombre || !Descripcion) {
             return NextResponse.json({ message: "Nombre y Descripcion son requeridos" }, { status: 400 });
         }
-        const result = await db.query("UPDATE mydb.ligas SET Nombre = ?, Descripcion = ? WHERE idLigas = ?", [Nombre, Descripcion, params.id]);
+        const result = await db.query("UPDATE Ligas SET Nombre = ?, Descripcion = ? WHERE idLigas = ?", [Nombre, Descripcion, params.id]);
         console.log("Liga actualizada:", result);
         return NextResponse.json({ message: "Liga actualizada exitosamente", result });
     }catch (error) {

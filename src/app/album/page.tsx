@@ -100,19 +100,45 @@ export default function AlbumPage() {
   const [filtroPosicion, setFiltroPosicion] = useState('todos');
   const [filtroEstadistica, setFiltroEstadistica] = useState('todos');
   const [filtroEfecto, setFiltroEfecto] = useState('todos');
+  const [filtroJornada, setFiltroJornada] = useState<number | null>(null);
+  const [filtroMinPuntos, setFiltroMinPuntos] = useState<string>('');
   const [busqueda, setBusqueda] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [ordenarPor, setOrdenarPor] = useState('nombre');
+
+  const [jornadas, setJornadas] = useState<{ idJornada: number; Nombre: string }[]>([]);
 
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina, setItemsPorPagina] = useState(32);
   const ITEMS_POR_PAGINA_OPTIONS = [8, 16, 32, 64, 128, 256, Infinity];
 
 
+  // Cargar jornadas disponibles
+  useEffect(() => {
+    fetch('/api/jornada').then(r => r.json()).then(data => {
+      if (data.result) setJornadas(data.result);
+    }).catch(console.error);
+  }, []);
+
+  // Función para mapear cartas desde API
+  const mapearCartas = (cartasJugador: CartaJugadorManager[], cartasObjeto: CartaObjetoManager[]): Carta[] => {
+    const countsByJugador: Record<number, number> = {};
+    cartasJugador.forEach((c) => { countsByJugador[c.Jugador_idJugadorDB] = (countsByJugador[c.Jugador_idJugadorDB] || 0) + 1; });
+    return [
+      ...cartasJugador.map((c: CartaJugadorManager) => {
+        let posicionFrontend = 'DEL';
+        try { posicionFrontend = getPosicionFrontend(c.PosicionJugadorDB); } catch {}
+        return { tipo: 'jugador' as const, Rareza: normalizeRareza(c.Rareza), Nombre: c.NombreJugador, NombreEquipo: c.NombreEquipo, id: c.idCartaJugador, Puntos: c.Puntos ?? null, jugadorId: c.Jugador_idJugadorDB, posicion: c.PosicionJugadorDB, posicionFrontend, edad: c.Edad?.split('-')[0] ?? '', pais: c.Pais, precio: c.Precio, unidades: countsByJugador[c.Jugador_idJugadorDB] ?? 1 };
+      }),
+      ...cartasObjeto.map((c: CartaObjetoManager) => ({ tipo: 'objeto' as const, Rareza: normalizeRareza(c.Rareza), Nombre: c.NombreObjeto, id: c.idCartaObjeto, Puntos: 0, idObjetos: c.Objeto_idObjetoDB, Efecto: c.EfectoObjeto, ValorEfecto: c.ValorEfecto, Descripcion: c.DescripcionObjeto, Estadistica: c.EstadisticaObjeto })),
+    ];
+  };
+
   useEffect(() => {
     const cargar = async () => {
       if (!manager) return;
-      const resJug = await fetch(`/api/cartas-manager?managerId=${manager.idManager}`);
+      const jornadaParam = filtroJornada ? `&idJornada=${filtroJornada}` : '';
+      const resJug = await fetch(`/api/cartas-manager?managerId=${manager.idManager}${jornadaParam}`);
       const dataJug = await resJug.json();
       const resObj = await fetch(`/api/cartas-manager/objetos?managerId=${manager.idManager}`);
       const dataObj = await resObj.json();

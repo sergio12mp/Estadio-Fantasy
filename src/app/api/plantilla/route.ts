@@ -38,23 +38,31 @@ export async function GET(req: NextRequest) {
         // incluyendo los puntos calculados de las estadísticas de esa jornada.
         const [jugadoresEnCampoRows]: any = await db.query(
             `SELECT
-                pjo.idCartaJugador,
-                pjo.idCartaObjeto,
-                pjo.posicionEnPlantilla,
+                pjo.idCartaJugador, pjo.posicionEnPlantilla,
+                pjo.idCartaObjeto1, pjo.idCartaObjeto2, pjo.idCartaObjeto3,
                 cj.Rareza AS RarezaCartaJugador,
                 j.idJugador, j.Nombre AS NombreJugador, j.Posicion AS PosicionJugadorDB, j.Edad, j.Pais, j.Precio,
                 e.Nombre AS NombreEquipo,
-                co.Rareza AS RarezaCartaObjeto,
-                o.Nombre AS NombreObjeto, o.Descripcion AS DescripcionObjeto, o.ValorEfecto,
-                o.idObjetos AS idObjetos,
-                es.Puntos AS PuntosJornada
+                co1.Rareza AS Rareza1, o1.idObjetos AS idO1, o1.Nombre AS NombreO1, o1.Descripcion AS DescO1, o1.ValorEfecto AS Valor1, o1.Efecto AS Efecto1, o1.Estadistica AS Stat1,
+                co2.Rareza AS Rareza2, o2.idObjetos AS idO2, o2.Nombre AS NombreO2, o2.Descripcion AS DescO2, o2.ValorEfecto AS Valor2, o2.Efecto AS Efecto2, o2.Estadistica AS Stat2,
+                co3.Rareza AS Rareza3, o3.idObjetos AS idO3, o3.Nombre AS NombreO3, o3.Descripcion AS DescO3, o3.ValorEfecto AS Valor3, o3.Efecto AS Efecto3, o3.Estadistica AS Stat3,
+                es.Puntos AS PuntosJornada,
+                es.Goles, es.Asistencias, es.TirosPenalti, es.TirosPenaltiIntentados,
+                es.TarjetasAmarillas, es.TarjetasRojas, es.Disparos, es.DisparosPorteria,
+                es.Toques, es.Entradas, es.Intercepciones, es.Bloqueos,
+                es.PasesCompletados, es.PasesProgresivos, es.AccionesCreadasDeGol, es.AccionesCreadasDeTiro,
+                es.Paradas, es.GolesEncajados, es.PenaltisParados
              FROM PlantillaJugadorObjeto pjo
              JOIN CartaJugador cj ON pjo.idCartaJugador = cj.idCartaJugador
              JOIN Jugador j ON cj.Jugador_idJugador = j.idJugador
              JOIN Equipo e ON j.idEquipo = e.idEquipo
-             LEFT JOIN CartaObjeto co ON pjo.idCartaObjeto = co.idCartaObjeto
-             LEFT JOIN Objetos o ON co.idObjetos = o.idObjetos
-             LEFT JOIN estadisticas es ON es.idJugador = j.idJugador AND es.idJornada = ?
+             LEFT JOIN CartaObjeto co1 ON pjo.idCartaObjeto1 = co1.idCartaObjeto
+             LEFT JOIN Objetos o1 ON co1.idObjetos = o1.idObjetos
+             LEFT JOIN CartaObjeto co2 ON pjo.idCartaObjeto2 = co2.idCartaObjeto
+             LEFT JOIN Objetos o2 ON co2.idObjetos = o2.idObjetos
+             LEFT JOIN CartaObjeto co3 ON pjo.idCartaObjeto3 = co3.idCartaObjeto
+             LEFT JOIN Objetos o3 ON co3.idObjetos = o3.idObjetos
+             LEFT JOIN Estadisticas es ON es.idJugador = j.idJugador AND es.idJornada = ?
              WHERE pjo.idPlantilla = ?
              ORDER BY pjo.posicionEnPlantilla`,
             [idJornadaNum, plantilla.idPlantilla]
@@ -62,38 +70,56 @@ export async function GET(req: NextRequest) {
 
         const jugadoresEnCampoData = Array.isArray(jugadoresEnCampoRows[0]) ? jugadoresEnCampoRows[0] : jugadoresEnCampoRows;
 
-        // Reestructurar los datos para que coincidan con CartaJugadorEnPlantilla
-        const jugadoresEnCampo = jugadoresEnCampoData.map((row: any) => ({
-            idJugador: row.idJugador,
-            idCartaJugador: row.idCartaJugador,
-            Nombre: row.NombreJugador,
-            Edad: row.Edad,
-            Pais: row.Pais,
-            Posicion: row.PosicionJugadorDB, // Posición de la DB
-            PosicionFrontend: getPosicionFrontend(row.PosicionJugadorDB), // <--- ¡USAR getPosicionFrontend aquí!
-            NombreEquipo: row.NombreEquipo,
-            Rareza: row.RarezaCartaJugador,
-            PuntosJornada: row.PuntosJornada ?? null,
-            objetosEquipados: row.idCartaObjeto ? [{
-                idCartaObjeto: row.idCartaObjeto,
-                idObjetos: row.idObjetos,
-                Nombre: row.NombreObjeto,
-                Rareza: row.RarezaCartaObjeto,
-                Descripcion: row.DescripcionObjeto,
-                ValorEfecto: row.ValorEfecto ?? 1.0,
-            }] : [],
-            maxObjetosSlots: 0, // Esto se calculará en el frontend
-            posicionEnPlantilla: row.posicionEnPlantilla,
-        }));
+        function calcBonus(efecto: string | null, stat: string | null, valor: number | null, puntosBase: number, row: any): number {
+            if (!efecto || !valor) return 0;
+            if (efecto === 'multiplicador') return parseFloat((puntosBase * (valor - 1)).toFixed(2));
+            if (efecto === 'suma' && stat) return parseFloat(((row[stat] ?? 0) * valor).toFixed(2));
+            return 0;
+        }
 
-        // Asegurarse de que `jugadoresEnCampo` sea un array esparso de 11 elementos
-        // esto es clave para que el frontend pueda mapear las posiciones correctamente
-        const jugadoresEnCampoSparse: (typeof jugadoresEnCampo[number] | null)[] = Array(11).fill(null);
-        jugadoresEnCampo.forEach((jugador: any) => {
-            if (jugador.posicionEnPlantilla !== undefined && jugador.posicionEnPlantilla >= 0 && jugador.posicionEnPlantilla < 11) {
-                jugadoresEnCampoSparse[jugador.posicionEnPlantilla] = jugador;
+        const jugadoresEnCampoSparse: (any | null)[] = Array(11).fill(null);
+        for (const row of jugadoresEnCampoData) {
+            const pos: number = row.posicionEnPlantilla;
+            if (pos < 0 || pos >= 11) continue;
+            const puntosBase = row.PuntosJornada ?? 0;
+            const objetos: any[] = [];
+            let bonus = 0;
+            for (const [idCol, rarezaCol, idOCol, nombreCol, descCol, valorCol, efectoCol, statCol] of [
+                ['idCartaObjeto1', 'Rareza1', 'idO1', 'NombreO1', 'DescO1', 'Valor1', 'Efecto1', 'Stat1'],
+                ['idCartaObjeto2', 'Rareza2', 'idO2', 'NombreO2', 'DescO2', 'Valor2', 'Efecto2', 'Stat2'],
+                ['idCartaObjeto3', 'Rareza3', 'idO3', 'NombreO3', 'DescO3', 'Valor3', 'Efecto3', 'Stat3'],
+            ]) {
+                if (row[idCol]) {
+                    bonus += calcBonus(row[efectoCol], row[statCol], row[valorCol], puntosBase, row);
+                    objetos.push({
+                        idCartaObjeto: row[idCol],
+                        idObjetos: row[idOCol],
+                        Nombre: row[nombreCol],
+                        Rareza: row[rarezaCol],
+                        Descripcion: row[descCol],
+                        ValorEfecto: row[valorCol] ?? 1.0,
+                        Efecto: row[efectoCol],
+                    });
+                }
             }
-        });
+            jugadoresEnCampoSparse[pos] = {
+                idJugador: row.idJugador,
+                idCartaJugador: row.idCartaJugador,
+                Nombre: row.NombreJugador,
+                Edad: row.Edad,
+                Pais: row.Pais,
+                Posicion: row.PosicionJugadorDB,
+                PosicionFrontend: getPosicionFrontend(row.PosicionJugadorDB),
+                NombreEquipo: row.NombreEquipo,
+                Rareza: row.RarezaCartaJugador,
+                Precio: row.Precio,
+                PuntosJornada: row.PuntosJornada ?? null,
+                BonusObjeto: bonus,
+                objetosEquipados: objetos,
+                maxObjetosSlots: 0,
+                posicionEnPlantilla: pos,
+            };
+        }
 
         return NextResponse.json({ plantilla, jugadoresEnCampo: jugadoresEnCampoSparse }, { status: 200 });
 
@@ -163,30 +189,24 @@ export async function POST(req: NextRequest) {
 
             // Paso 2: Insertar los jugadores y sus objetos en PlantillaJugadorObjeto
             if (jugadoresParaGuardar.length > 0) {
-                const valuesToInsert: (number | null)[][] = []; // Usamos un array de arrays para los valores
+                const valuesToInsert: (number | null)[][] = [];
                 for (const jugador of jugadoresParaGuardar) {
-                    const idCartaJugador = jugador.idCartaJugador;
-                    const posicionEnPlantilla = jugador.posicionEnPlantilla; // ¡Obtenemos la posición aquí!
-                    const idCartaObjeto = jugador.objetosEquipados && jugador.objetosEquipados.length > 0
-                        ? jugador.objetosEquipados[0].idCartaObjeto
-                        : null; // Usar null en lugar de 0 si la columna lo permite
-
-                    if (idCartaObjeto === null) {
-                        console.warn(`WARN: Jugador ${idCartaJugador} en plantilla ${idPlantillaActual} (posición ${posicionEnPlantilla}) no tiene objeto. Insertando con idCartaObjeto NULL.`);
-                    }
-
-                    // Asegurarse de que posicionEnPlantilla sea un número válido
+                    const { idCartaJugador, posicionEnPlantilla } = jugador;
                     if (posicionEnPlantilla === undefined || posicionEnPlantilla === null || isNaN(posicionEnPlantilla)) {
-                         throw new Error(`Posición inválida para el jugador ${idCartaJugador}.`);
+                        throw new Error(`Posición inválida para el jugador ${idCartaJugador}.`);
                     }
-
-                    // Los valores deben ser un array para el INSERT batch
-                    valuesToInsert.push([idPlantillaActual, idCartaObjeto, idCartaJugador, posicionEnPlantilla]);
+                    const ids = (jugador.objetosEquipados ?? []).map((o: any) =>
+                        typeof o === 'object' ? (o.idCartaObjeto ?? null) : (o ?? null)
+                    );
+                    const id1 = ids[0] ?? null;
+                    const id2 = ids[1] ?? null;
+                    const id3 = ids[2] ?? null;
+                    valuesToInsert.push([idPlantillaActual, id1, id2, id3, idCartaJugador, posicionEnPlantilla]);
                 }
 
                 if (valuesToInsert.length > 0) {
                     // Consulta con múltiples VALUES
-                    const insertQuery = `INSERT INTO PlantillaJugadorObjeto (idPlantilla, idCartaObjeto, idCartaJugador, posicionEnPlantilla) VALUES ?`;
+                    const insertQuery = `INSERT INTO PlantillaJugadorObjeto (idPlantilla, idCartaObjeto1, idCartaObjeto2, idCartaObjeto3, idCartaJugador, posicionEnPlantilla) VALUES ?`;
                     console.log(`DEBUG: Ejecutando inserción de ${valuesToInsert.length} filas en PlantillaJugadorObjeto.`);
                     await db.query(insertQuery, [valuesToInsert]); // Pasar un array de arrays
                     console.log(`INFO: ${valuesToInsert.length} entradas insertadas/actualizadas en PlantillaJugadorObjeto.`);

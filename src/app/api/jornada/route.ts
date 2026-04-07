@@ -9,7 +9,7 @@ interface Jornada {
 
 export async function GET() {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.jornada") as [Jornada[], any];
+        const [result] = await db.query("SELECT * FROM Jornada") as [Jornada[], any];
         if (!result.length) {
             console.log("No se encontraron jornadas");
             return NextResponse.json({ message: "No se encontraron jornadas" }, { status: 404 });
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Nombre y idTemporada son requeridos" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.jornada (Nombre, idTemporada) VALUES (?, ?)", [Nombre, idTemporada]) as any;
+        const result = await db.query("INSERT INTO Jornada (Nombre, idTemporada) VALUES (?, ?)", [Nombre, idTemporada]) as any;
 
         console.log("Jornada insertada:", result);
         return NextResponse.json({ message: "Jornada insertada exitosamente", result }, { status: 201 });

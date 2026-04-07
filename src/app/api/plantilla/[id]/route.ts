@@ -11,7 +11,7 @@ interface Plantilla {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.plantilla WHERE idPlantilla = ?", [params.id]) as [Plantilla[], any];
+        const [result] = await db.query("SELECT * FROM Plantilla WHERE idPlantilla = ?", [params.id]) as [Plantilla[], any];
         if (!result.length) {
             console.log(`No se encontró la plantilla con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la plantilla" }, { status: 404 });
@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const [result] = await db.query("DELETE FROM mydb.plantilla WHERE idPlantilla = ?", [params.id]) as [any, any];
+        const [result] = await db.query("DELETE FROM Plantilla WHERE idPlantilla = ?", [params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró la plantilla para eliminar" }, { status: 404 });

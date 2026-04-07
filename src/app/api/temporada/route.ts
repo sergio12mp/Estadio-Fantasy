@@ -8,7 +8,7 @@ interface Temporada {
 
 export async function GET() {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.temporada") as [Temporada[], any];
+        const [result] = await db.query("SELECT * FROM Temporada") as [Temporada[], any];
         if (!result.length) {
             console.log("No se encontraron temporadas");
             return NextResponse.json({ message: "No se encontraron temporadas" }, { status: 404 });
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Nombre es requerido" }, { status: 400 });
         }
 
-        const [result] = await db.query("INSERT INTO mydb.temporada (Nombre) VALUES (?)", [Nombre]) as [any, any];
+        const [result] = await db.query("INSERT INTO Temporada (Nombre) VALUES (?)", [Nombre]) as [any, any];
 
         console.log("Temporada insertada:", result);
         return NextResponse.json({ message: "Temporada insertada exitosamente", result }, { status: 201 });

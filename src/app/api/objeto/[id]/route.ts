@@ -9,7 +9,7 @@ interface Objeto {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.objeto WHERE idObjeto = ?", [params.id]) as [Objeto[], any];
+        const [result] = await db.query("SELECT * FROM Objetos WHERE idObjeto = ?", [params.id]) as [Objeto[], any];
         if (!result.length) {
             console.log(`No se encontró el objeto con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró el objeto" }, { status: 404 });
@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "Nombre y Descripcion son requeridos" }, { status: 400 });
         }
 
-        const [result] = await db.query("UPDATE mydb.objeto SET Nombre = ?, Descripcion = ? WHERE idObjeto = ?", [Nombre, Descripcion, params.id]) as [any, any];
+        const [result] = await db.query("UPDATE Objetos SET Nombre = ?, Descripcion = ? WHERE idObjeto = ?", [Nombre, Descripcion, params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró el objeto para actualizar" }, { status: 404 });
@@ -46,7 +46,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const [result] = await db.query("DELETE FROM mydb.objeto WHERE idObjeto = ?", [params.id]) as [any, any];
+        const [result] = await db.query("DELETE FROM Objetos WHERE idObjeto = ?", [params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró el objeto para eliminar" }, { status: 404 });

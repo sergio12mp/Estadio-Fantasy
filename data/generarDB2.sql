@@ -180,6 +180,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Manager` (
   `balones`           INT          NOT NULL DEFAULT 0,
   `puntuacion_actual` INT          NOT NULL DEFAULT 0,
   `pity`              INT          NOT NULL DEFAULT 0,
+  `isBot`             TINYINT(1)   NOT NULL DEFAULT 0,
   PRIMARY KEY (`idManager`)
 ) ENGINE = InnoDB;
 
@@ -334,7 +335,9 @@ DROP TABLE IF EXISTS `mydb`.`PlantillaJugadorObjeto`;
 CREATE TABLE IF NOT EXISTS `mydb`.`PlantillaJugadorObjeto` (
   `idPlantilla`        INT NOT NULL,
   `idCartaJugador`     INT NOT NULL,
-  `idCartaObjeto`      INT NULL DEFAULT NULL,
+  `idCartaObjeto1`     INT NULL DEFAULT NULL,
+  `idCartaObjeto2`     INT NULL DEFAULT NULL,
+  `idCartaObjeto3`     INT NULL DEFAULT NULL,
   `posicionEnPlantilla` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`idPlantilla`, `idCartaJugador`),
   INDEX `idx_PJO_Plantilla`    (`idPlantilla` ASC),

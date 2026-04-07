@@ -129,7 +129,8 @@ export interface CartaJugadorEnPlantilla {
     objetosEquipados: ObjetoEquipado[]; // ¡Array de objetos equipados en este jugador!
     maxObjetosSlots: number; // Slots disponibles para objetos según la rareza de este jugador
     posicionEnPlantilla: number; // El índice del slot en la plantilla (0-10), crucial para el Map
-    PuntosJornada?: number | null; // Puntos calculados para la jornada seleccionada (null si no calculados aún)
+    PuntosJornada?: number | null; // Puntos base del jugador en la jornada (de Estadisticas.Puntos)
+    BonusObjeto?: number; // Bonus adicional por el objeto equipado en esa jornada
 }
 
 // Función para determinar el número de slots de objeto según la rareza del jugador
