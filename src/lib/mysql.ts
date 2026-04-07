@@ -12,7 +12,7 @@ import mysql from "mysql2/promise";
 //   queueLimit: 0,
 // });
 
-export const connection = mysql.createPool({
+export const db = mysql.createPool({
   host: process.env.MYSQLHOST,
   user: process.env.MYSQLUSER,
   password: process.env.MYSQLPASSWORD,
