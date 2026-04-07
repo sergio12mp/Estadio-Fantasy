@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const scriptPath = path.join(process.cwd(), "r-scripts", "obtenerDatos.r");
   const outputPath = path.join(process.cwd(), "r-scripts", `jornada_${jornada}_stats.csv`);
 
-  return new Promise((resolve) => {
+  return new Promise<NextResponse>((resolve) => {
     const r = spawn("Rscript", [scriptPath, jornada]);
 
     let stderr = "";
