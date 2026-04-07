@@ -18,6 +18,10 @@ export async function GET(req: NextRequest) {
 
     console.log(`INFO: Obteniendo cartas de jugador para Manager ID: ${managerIdNum}`);
 
+    // idJornada sirve como límite superior para el acumulado de puntos
+    const idJornada = searchParams.get("idJornada");
+    const idJornadaNum = idJornada ? parseInt(idJornada) : null;
+
     const [cartasJugadorQueryResult]: any = await db.query(
       `SELECT
           cj.idCartaJugador,
@@ -28,12 +32,18 @@ export async function GET(req: NextRequest) {
           j.Edad,
           j.Pais,
           j.Precio,
-          e.Nombre AS NombreEquipo
+          e.Nombre AS NombreEquipo,
+          CASE WHEN COUNT(es.Puntos) > 0 THEN SUM(es.Puntos) ELSE NULL END AS Puntos
        FROM CartaJugador cj
        JOIN Jugador j ON cj.Jugador_idJugador = j.idJugador
        JOIN Equipo e ON j.idEquipo = e.idEquipo
-       WHERE cj.Manager_idManager = ?`,
-      [managerIdNum]
+       LEFT JOIN Estadisticas es
+         ON es.idJugador = j.idJugador
+         AND es.Puntos IS NOT NULL
+         ${idJornadaNum ? 'AND es.idJornada <= ?' : ''}
+       WHERE cj.Manager_idManager = ?
+       GROUP BY cj.idCartaJugador, cj.Rareza, j.idJugador, j.Nombre, j.Posicion, j.Edad, j.Pais, j.Precio, e.Nombre`,
+      idJornadaNum ? [idJornadaNum, managerIdNum] : [managerIdNum]
     );
 
     const cartasJugador = Array.isArray(cartasJugadorQueryResult[0])

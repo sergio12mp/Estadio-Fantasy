@@ -68,9 +68,19 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
           <p className="font-bold text-gray-900 dark:text-gray-100 text-xs leading-tight truncate">{carta.Nombre}</p>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{carta.NombreEquipo}</p>
           {carta.PuntosJornada != null && (
-            <div className="inline-flex items-center gap-0.5 mt-0.5">
-              <span className="text-amber-500 text-[10px]">⭐</span>
-              <span className="text-[10px] font-bold text-amber-700">{carta.PuntosJornada}pts</span>
+            <div className="mt-0.5">
+              {(carta.BonusObjeto ?? 0) > 0 ? (
+                <div className="text-[9px] leading-tight">
+                  <span className="text-amber-600 font-bold">{carta.PuntosJornada}pts</span>
+                  <span className="text-purple-500 font-semibold"> +{carta.BonusObjeto}🎯</span>
+                  <span className="text-amber-700 font-bold"> ={Number(carta.PuntosJornada) + Number(carta.BonusObjeto ?? 0)}pts</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-0.5">
+                  <span className="text-amber-500 text-[10px]">⭐</span>
+                  <span className="text-[10px] font-bold text-amber-700">{carta.PuntosJornada}pts</span>
+                </div>
+              )}
             </div>
           )}
           {maxObjetosSlots > 0 && (
@@ -141,10 +151,22 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
         {/* Points */}
         <div className="text-center mb-2">
           {carta.PuntosJornada != null ? (
-            <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1">
-              <span className="text-amber-500 text-xs">⭐</span>
-              <span className="text-xs font-bold text-amber-700">{carta.PuntosJornada} pts</span>
-            </div>
+            (carta.BonusObjeto ?? 0) > 0 ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-1">
+                <div className="flex items-center justify-center gap-1 text-xs">
+                  <span className="text-amber-500">⭐</span>
+                  <span className="font-bold text-amber-700">{carta.PuntosJornada}</span>
+                  <span className="text-purple-500 font-semibold">+{carta.BonusObjeto}🎯</span>
+                  <span className="text-gray-400">=</span>
+                  <span className="font-extrabold text-amber-800">{Number(carta.PuntosJornada) + Number(carta.BonusObjeto ?? 0)} pts</span>
+                </div>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1">
+                <span className="text-amber-500 text-xs">⭐</span>
+                <span className="text-xs font-bold text-amber-700">{carta.PuntosJornada} pts</span>
+              </div>
+            )
           ) : (
             <span className="text-xs text-gray-400">Sin puntos aún</span>
           )}

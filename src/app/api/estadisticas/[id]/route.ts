@@ -37,7 +37,7 @@ interface Estadisticas {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.estadisticas WHERE idEstadisticas = ?", [params.id]) as [Estadisticas[], any];
+        const [result] = await db.query("SELECT * FROM Estadisticas WHERE idEstadisticas = ?", [params.id]) as [Estadisticas[], any];
         if (!result.length) {
             console.log(`No se encontró la estadística con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la estadística" }, { status: 404 });
@@ -67,7 +67,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }
 
         const [result] = await db.query(`
-            UPDATE mydb.estadisticas SET
+            UPDATE Estadisticas SET
                 idPartido = ?, idJornada = ?, idJugador = ?, idEquipo = ?,
                 Minutos = ?, Goles = ?, Asistencias = ?, TirosPenalti = ?, TirosPenaltiIntentados = ?,
                 Disparos = ?, DisparosPorteria = ?, TarjetasAmarillas = ?, TarjetasRojas = ?, Toques = ?,
@@ -101,7 +101,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const [result] = await db.query("DELETE FROM mydb.estadisticas WHERE idEstadisticas = ?", [params.id]) as [any, any];
+        const [result] = await db.query("DELETE FROM Estadisticas WHERE idEstadisticas = ?", [params.id]) as [any, any];
 
         if (result.affectedRows === 0) {
             return NextResponse.json({ message: "No se encontró la estadística para eliminar" }, { status: 404 });

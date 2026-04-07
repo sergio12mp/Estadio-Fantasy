@@ -285,8 +285,10 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
                     {rarezaNorm}
                   </span>
                   <span className="text-white/80 text-xs">{RAREZA_STARS[rarezaNorm]}</span>
-                  {(selectedPlayer.Puntos ?? 0) > 0 && (
-                    <span className="text-amber-300 text-xs font-bold">⭐ {selectedPlayer.Puntos} pts</span>
+                  {selectedPlayer.Puntos != null && (
+                    <span className={`text-xs font-bold ${selectedPlayer.Puntos < 0 ? 'text-red-300' : 'text-amber-300'}`}>
+                      ⭐ {selectedPlayer.Puntos} pts acum.
+                    </span>
                   )}
                 </div>
               </div>
@@ -430,8 +432,10 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
                           {rNorm}
                         </span>
                       </div>
-                      {(jugador.Puntos ?? 0) > 0 && (
-                        <p className="text-center text-xs text-amber-600 font-semibold mt-0.5">⭐ {jugador.Puntos}</p>
+                      {jugador.Puntos != null && (
+                        <p className={`text-center text-xs font-semibold mt-0.5 ${jugador.Puntos < 0 ? 'text-red-500' : 'text-amber-600'}`}>
+                          ⭐ {jugador.Puntos} pts acum.
+                        </p>
                       )}
                     </div>
                   </div>
@@ -475,8 +479,10 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
                           {rNorm}
                         </span>
                       </div>
-                      {(jugador.Puntos ?? 0) > 0 && (
-                        <p className="text-center text-xs text-amber-600 font-semibold mt-0.5">⭐ {jugador.Puntos}</p>
+                      {jugador.Puntos != null && (
+                        <p className={`text-center text-xs font-semibold mt-0.5 ${jugador.Puntos < 0 ? 'text-red-500' : 'text-amber-600'}`}>
+                          ⭐ {jugador.Puntos} pts acum.
+                        </p>
                       )}
                       {isSelected && (
                         <p className="text-center text-xs text-blue-600 dark:text-blue-400 font-bold mt-0.5">✓ Seleccionado</p>

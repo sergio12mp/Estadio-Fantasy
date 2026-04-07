@@ -37,7 +37,7 @@ interface Estadisticas {
 
 export async function GET() {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.estadisticas") as [Estadisticas[], any];
+        const [result] = await db.query("SELECT * FROM Estadisticas") as [Estadisticas[], any];
         if (!result.length) {
             console.log("No se encontraron estadísticas");
             return NextResponse.json({ message: "No se encontraron estadísticas" }, { status: 404 });
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         }
 
         const [result] = await db.query(`
-            INSERT INTO mydb.estadisticas (
+            INSERT INTO Estadisticas (
                 idPartido, idJornada, idJugador, idEquipo,
                 Minutos, Goles, Asistencias, TirosPenalti, TirosPenaltiIntentados,
                 Disparos, DisparosPorteria, TarjetasAmarillas, TarjetasRojas, Toques,

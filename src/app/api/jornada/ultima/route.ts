@@ -1,28 +1,39 @@
 // app/api/jornada/ultima/route.ts
-import { db } from "@/lib/mysql"; // Asegúrate de que esta ruta sea correcta
+import { db } from "@/lib/mysql";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    console.log("INFO: Intentando obtener la última jornada.");
-    const [rows]: any = await db.query(
-      `SELECT idJornada FROM Jornada ORDER BY idJornada DESC LIMIT 1`
+    // Leer la jornada actual desde Config
+    const [configRows]: any = await db.query(
+      "SELECT valor FROM Config WHERE clave = 'jornada_actual'"
     );
-    console.log("DEBUG: Resultado de la consulta a la base de datos:", rows);
-    // MySQL2 devuelve los resultados en rows[0] si es una query de selección
-    //const lastJornada = Array.isArray(rows[0]) && rows[0].length > 0 ? rows[0][0] : null;
-    const lastJornada = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
 
-    if (!lastJornada || !lastJornada.idJornada) { // También verifica que idJornada exista en el objeto
-      console.warn("WARN: No se encontró ninguna jornada en la base de datos.");
-      return NextResponse.json({ error: "No se encontró ninguna jornada." }, { status: 404 });
+    let idJornada: number | null = configRows?.[0]?.valor
+      ? parseInt(configRows[0].valor)
+      : null;
+
+    // Fallback: primera jornada con estadísticas si Config está vacía
+    if (!idJornada) {
+      const [primeras]: any = await db.query(
+        "SELECT DISTINCT idJornada FROM Estadisticas ORDER BY idJornada ASC LIMIT 1"
+      );
+      if (!primeras?.length) {
+        return NextResponse.json({ error: "No se encontró ninguna jornada." }, { status: 404 });
+      }
+      idJornada = primeras[0].idJornada;
+      await db.query(
+        "INSERT INTO Config (clave, valor) VALUES ('jornada_actual', ?) ON DUPLICATE KEY UPDATE valor = ?",
+        [String(idJornada), String(idJornada)]
+      );
     }
 
-    console.log("INFO: Última jornada obtenida:", lastJornada.idJornada);
-    return NextResponse.json({ idJornada: lastJornada.idJornada }, { status: 200 });
+    return NextResponse.json({ idJornada }, { status: 200 });
   } catch (error: any) {
-    console.error("❌ CRITICAL ERROR: Error al obtener la última jornada:", error);
-    if (error.code) console.error("SQL Error Code:", error.code);
-    return NextResponse.json({ error: "Error interno del servidor al obtener la última jornada", details: error.message }, { status: 500 });
+    console.error("❌ Error al obtener la última jornada:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor", details: error.message },
+      { status: 500 }
+    );
   }
 }

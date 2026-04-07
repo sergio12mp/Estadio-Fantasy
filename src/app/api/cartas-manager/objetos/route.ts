@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
          o.Efecto AS EfectoObjeto,
          o.ValorEfecto,
          o.Estadistica AS EstadisticaObjeto
-       FROM cartaobjeto co
+       FROM CartaObjeto co
        JOIN Objetos o ON co.idObjetos = o.idObjetos
        WHERE co.idManager = ?`,
       [managerId]

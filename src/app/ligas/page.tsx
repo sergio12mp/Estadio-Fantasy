@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import RequireAuth from '@/components/RequireAuth';
 import { useAuth } from '@/context/auth-context';
 import Toast from '@/components/Toast';
@@ -19,6 +20,7 @@ type Clasificacion = {
     idManager: number;
     nombreManager: string;
     puntuacion_actual: number;
+    isBot: number;
 };
 
 type Equipo = {
@@ -477,8 +479,14 @@ const LigasPageContent = () => {
                                                     <tr key={m.idManager} className={esYo ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
                                                         <td className="py-2 px-4 border-b dark:border-gray-700 text-gray-900 dark:text-gray-200">{index + 1}</td>
                                                         <td className="py-2 px-4 border-b dark:border-gray-700 font-medium text-gray-900 dark:text-gray-200">
-                                                            {m.nombreManager}
+                                                            <Link
+                                                                href={`/equipo/${m.idManager}?nombre=${encodeURIComponent(m.nombreManager)}`}
+                                                                className="hover:underline hover:text-blue-600 transition-colors"
+                                                            >
+                                                                {m.nombreManager}
+                                                            </Link>
                                                             {esYo && <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-semibold">(tú)</span>}
+                                                            {!!m.isBot && <span className="ml-2 text-xs bg-gray-200 text-gray-500 font-semibold px-1.5 py-0.5 rounded-full">BOT</span>}
                                                         </td>
                                                         <td className="py-2 px-4 border-b dark:border-gray-700 font-bold text-gray-900 dark:text-gray-200">{m.puntuacion_actual}</td>
                                                     </tr>

@@ -12,8 +12,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         const param = params.id;
         const isNumeric = /^\d+$/.test(param);
         const query = isNumeric
-            ? "SELECT * FROM mydb.jornada WHERE idJornada = ?"
-            : "SELECT * FROM mydb.jornada WHERE Nombre = ?";
+            ? "SELECT * FROM Jornada WHERE idJornada = ?"
+            : "SELECT * FROM Jornada WHERE Nombre = ?";
 
         const [result] = await db.query(query, [param]) as [Jornada[], any];
         if (!result.length) {
@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
                 return NextResponse.json({ message: "Nombre y idTemporada son requeridos" }, { status: 400 });
             }
             const result = await db.query(
-                "UPDATE mydb.jornada SET Nombre = ?, idTemporada = ? WHERE idJornada = ?",
+                "UPDATE Jornada SET Nombre = ?, idTemporada = ? WHERE idJornada = ?",
                 [Nombre, idTemporada, param]
             ) as any;
             if (result.affectedRows === 0) {
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
                 return NextResponse.json({ message: "idTemporada es requerido" }, { status: 400 });
             }
             const result = await db.query(
-                "UPDATE mydb.jornada SET idTemporada = ? WHERE Nombre = ?",
+                "UPDATE Jornada SET idTemporada = ? WHERE Nombre = ?",
                 [idTemporada, param]
             ) as any;
             if (result.affectedRows === 0) {
@@ -68,8 +68,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
         const param = params.id;
         const isNumeric = /^\d+$/.test(param);
         const query = isNumeric
-            ? "DELETE FROM mydb.jornada WHERE idJornada = ?"
-            : "DELETE FROM mydb.jornada WHERE Nombre = ?";
+            ? "DELETE FROM Jornada WHERE idJornada = ?"
+            : "DELETE FROM Jornada WHERE Nombre = ?";
 
         const result = await db.query(query, [param]) as any;
         if (result.affectedRows === 0) {

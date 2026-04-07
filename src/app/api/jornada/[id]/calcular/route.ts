@@ -166,7 +166,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         // PARTE 1: CALCULAR PUNTOS DE CADA JUGADOR EN 'estadisticas'
         // -----------------------------------------------------------
         const [statsDeJornada]: any = await connection.query(
-            "SELECT E.*, J.Posicion FROM estadisticas AS E JOIN Jugador AS J ON E.idJugador = J.idJugador WHERE E.idJornada = ?",
+            "SELECT E.*, J.Posicion FROM Estadisticas AS E JOIN Jugador AS J ON E.idJugador = J.idJugador WHERE E.idJornada = ?",
             [jornada]
         );
 
@@ -252,7 +252,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             }
 
             await connection.query(
-                "UPDATE estadisticas SET Puntos = ? WHERE idEstadisticas = ?",
+                "UPDATE Estadisticas SET Puntos = ? WHERE idEstadisticas = ?",
                 [parseFloat(puntuacionJugador.toFixed(2)), stats.idEstadisticas]
             );
         }
@@ -274,43 +274,51 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             // Suma base: puntos del jugador + bonus de su objeto equipado
             // - multiplicador: aplica (ValorEfecto - 1) * E.Puntos como bonus
             // - suma: aplica ValorEfecto * valor_de_la_estadistica como bonus
+            // Calcular puntos base + bonus de hasta 3 objetos por jugador
+            const bonusCaseSQL = (col: string) => `
+                CASE
+                    WHEN O${col}.Efecto = 'multiplicador' THEN E.Puntos * (O${col}.ValorEfecto - 1)
+                    WHEN O${col}.Efecto = 'suma' THEN CASE O${col}.Estadistica
+                        WHEN 'Goles'                  THEN E.Goles                  * O${col}.ValorEfecto
+                        WHEN 'Asistencias'            THEN E.Asistencias            * O${col}.ValorEfecto
+                        WHEN 'TirosPenalti'           THEN E.TirosPenalti           * O${col}.ValorEfecto
+                        WHEN 'TirosPenaltiIntentados' THEN E.TirosPenaltiIntentados * O${col}.ValorEfecto
+                        WHEN 'TarjetasAmarillas'      THEN E.TarjetasAmarillas      * O${col}.ValorEfecto
+                        WHEN 'TarjetasRojas'          THEN E.TarjetasRojas          * O${col}.ValorEfecto
+                        WHEN 'Disparos'               THEN E.Disparos               * O${col}.ValorEfecto
+                        WHEN 'DisparosPorteria'       THEN E.DisparosPorteria       * O${col}.ValorEfecto
+                        WHEN 'Toques'                 THEN E.Toques                 * O${col}.ValorEfecto
+                        WHEN 'Entradas'               THEN E.Entradas               * O${col}.ValorEfecto
+                        WHEN 'Intercepciones'         THEN E.Intercepciones         * O${col}.ValorEfecto
+                        WHEN 'Bloqueos'               THEN E.Bloqueos               * O${col}.ValorEfecto
+                        WHEN 'PasesCompletados'       THEN E.PasesCompletados       * O${col}.ValorEfecto
+                        WHEN 'PasesProgresivos'       THEN E.PasesProgresivos       * O${col}.ValorEfecto
+                        WHEN 'AccionesCreadasDeGol'   THEN E.AccionesCreadasDeGol   * O${col}.ValorEfecto
+                        WHEN 'AccionesCreadasDeTiro'  THEN E.AccionesCreadasDeTiro  * O${col}.ValorEfecto
+                        WHEN 'Paradas'                THEN COALESCE(E.Paradas, 0)   * O${col}.ValorEfecto
+                        WHEN 'GolesEncajados'         THEN COALESCE(E.GolesEncajados, 0) * O${col}.ValorEfecto
+                        WHEN 'PenaltisParados'        THEN COALESCE(E.PenaltisParados, 0) * O${col}.ValorEfecto
+                        ELSE 0
+                    END
+                    ELSE 0
+                END`;
+
             const [resultadoSuma]: any = await connection.query(
                 `SELECT SUM(
                     E.Puntos
-                    + CASE
-                        WHEN O.Efecto = 'multiplicador'
-                            THEN E.Puntos * (O.ValorEfecto - 1)
-                        WHEN O.Efecto = 'suma'
-                            THEN CASE O.Estadistica
-                                WHEN 'Goles'                   THEN E.Goles                   * O.ValorEfecto
-                                WHEN 'Asistencias'             THEN E.Asistencias             * O.ValorEfecto
-                                WHEN 'TirosPenalti'            THEN E.TirosPenalti            * O.ValorEfecto
-                                WHEN 'TirosPenaltiIntentados'  THEN E.TirosPenaltiIntentados  * O.ValorEfecto
-                                WHEN 'TarjetasAmarillas'       THEN E.TarjetasAmarillas       * O.ValorEfecto
-                                WHEN 'TarjetasRojas'           THEN E.TarjetasRojas           * O.ValorEfecto
-                                WHEN 'Disparos'                THEN E.Disparos                * O.ValorEfecto
-                                WHEN 'DisparosPorteria'        THEN E.DisparosPorteria        * O.ValorEfecto
-                                WHEN 'Toques'                  THEN E.Toques                  * O.ValorEfecto
-                                WHEN 'Entradas'                THEN E.Entradas                * O.ValorEfecto
-                                WHEN 'Intercepciones'          THEN E.Intercepciones          * O.ValorEfecto
-                                WHEN 'Bloqueos'                THEN E.Bloqueos                * O.ValorEfecto
-                                WHEN 'PasesCompletados'        THEN E.PasesCompletados        * O.ValorEfecto
-                                WHEN 'PasesProgresivos'        THEN E.PasesProgresivos        * O.ValorEfecto
-                                WHEN 'AccionesCreadasDeGol'    THEN E.AccionesCreadasDeGol    * O.ValorEfecto
-                                WHEN 'AccionesCreadasDeTiro'   THEN E.AccionesCreadasDeTiro   * O.ValorEfecto
-                                WHEN 'Paradas'                 THEN COALESCE(E.Paradas, 0)    * O.ValorEfecto
-                                WHEN 'GolesEncajados'          THEN COALESCE(E.GolesEncajados, 0) * O.ValorEfecto
-                                WHEN 'PenaltisParados'         THEN COALESCE(E.PenaltisParados, 0) * O.ValorEfecto
-                                ELSE 0
-                            END
-                        ELSE 0
-                    END
+                    + ${bonusCaseSQL('1')}
+                    + ${bonusCaseSQL('2')}
+                    + ${bonusCaseSQL('3')}
                 ) AS puntuacionTotal
                  FROM PlantillaJugadorObjeto AS PJO
                  JOIN CartaJugador AS CJ ON PJO.idCartaJugador = CJ.idCartaJugador
-                 JOIN estadisticas AS E ON E.idJugador = CJ.Jugador_idJugador AND E.idJornada = ?
-                 LEFT JOIN CartaObjeto AS CO ON PJO.idCartaObjeto = CO.idCartaObjeto
-                 LEFT JOIN Objetos AS O ON CO.idObjetos = O.idObjetos
+                 JOIN Estadisticas AS E ON E.idJugador = CJ.Jugador_idJugador AND E.idJornada = ?
+                 LEFT JOIN CartaObjeto AS CO1 ON PJO.idCartaObjeto1 = CO1.idCartaObjeto
+                 LEFT JOIN Objetos AS O1 ON CO1.idObjetos = O1.idObjetos
+                 LEFT JOIN CartaObjeto AS CO2 ON PJO.idCartaObjeto2 = CO2.idCartaObjeto
+                 LEFT JOIN Objetos AS O2 ON CO2.idObjetos = O2.idObjetos
+                 LEFT JOIN CartaObjeto AS CO3 ON PJO.idCartaObjeto3 = CO3.idCartaObjeto
+                 LEFT JOIN Objetos AS O3 ON CO3.idObjetos = O3.idObjetos
                  WHERE PJO.idPlantilla = ?`,
                 [jornada, idPlantilla]
             );
@@ -391,7 +399,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
                          JOIN PlantillaJugadorObjeto AS PJO ON PJO.idPlantilla = P.idPlantilla
                          JOIN CartaJugador AS CJ ON PJO.idCartaJugador = CJ.idCartaJugador
                          JOIN Jugador AS J ON CJ.Jugador_idJugador = J.idJugador
-                         JOIN estadisticas AS E ON E.idJugador = J.idJugador AND E.idJornada = P.idJornada
+                         JOIN Estadisticas AS E ON E.idJugador = J.idJugador AND E.idJornada = P.idJornada
                          LEFT JOIN CartaObjeto AS CO ON PJO.idCartaObjeto = CO.idCartaObjeto
                          LEFT JOIN Objetos AS O ON CO.idObjetos = O.idObjetos
                          WHERE P.idManager = ? AND J.idEquipo = ?`,

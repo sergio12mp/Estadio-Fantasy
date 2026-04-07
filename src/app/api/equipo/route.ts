@@ -6,7 +6,7 @@ import { GetEquipos } from '@/database/players';
 export async function GET() {
     try {
         console.log("GET EQUIPOS");
-        //const result = await db.query("SELECT * FROM mydb.equipo") as Equipo[];
+        //const result = await db.query("SELECT * FROM Equipo") as Equipo[];
         const result =  await GetEquipos();
         if (!result.length) {
             console.log("No se encontraron equipos GET");
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Nombre es requerido" }, { status: 400 });
         }
 
-        const [result] = await db.query("INSERT INTO mydb.equipo (Nombre) VALUES (?)", [Nombre]) as [any, any];
+        const [result] = await db.query("INSERT INTO Equipo (Nombre) VALUES (?)", [Nombre]) as [any, any];
 
         console.log("Equipo insertado:", result);
         return NextResponse.json({ message: "Equipo insertado exitosamente", result }, { status: 201 });

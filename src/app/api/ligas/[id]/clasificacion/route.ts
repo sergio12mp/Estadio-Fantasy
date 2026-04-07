@@ -8,6 +8,7 @@ type Clasificacion = {
     idManager: number;
     nombreManager: string;
     puntuacion_actual: number;
+    isBot: number;
 };
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -43,7 +44,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             SELECT
                 m.idManager,
                 m.nombre AS nombreManager,
-                ml.puntuacion_actual
+                ml.puntuacion_actual,
+                m.isBot
             FROM Manager m
             JOIN Manager_Ligas ml ON m.idManager = ml.Manager_idManager
             WHERE ml.Ligas_idLigas = ?

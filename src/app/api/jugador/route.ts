@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Todos los campos son requeridos" }, { status: 400 });
         }
 
-        const [result] = await db.query("INSERT INTO mydb.jugador (Nombre, Edad, Pais, Posicion, Precio, idEquipo) VALUES (?, ?, ?, ?, ?, ?)", [Nombre, Edad, Pais, Posicion, Precio, idEquipo]) as [any, any];
+        const [result] = await db.query("INSERT INTO Jugador (Nombre, Edad, Pais, Posicion, Precio, idEquipo) VALUES (?, ?, ?, ?, ?, ?)", [Nombre, Edad, Pais, Posicion, Precio, idEquipo]) as [any, any];
 
         console.log("Jugador insertado:", result);
         return NextResponse.json({ message: "Jugador insertado exitosamente", result }, { status: 201 });

@@ -8,7 +8,7 @@ interface Ligas {
 
 export async function GET() {
     try {
-        const [result] = await db.query("SELECT * FROM mydb.ligas") as [Ligas[], any];
+        const [result] = await db.query("SELECT * FROM Ligas") as [Ligas[], any];
         if (!result.length) {
             console.log("No se encontraron ligas");
             return NextResponse.json({ message: "No se encontraron ligas" }, { status: 404 });
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Nombre es requerido" }, { status: 400 });
         }
 
-        const result = await db.query("INSERT INTO mydb.ligas (Nombre) VALUES (?)", [Nombre]) as any;
+        const result = await db.query("INSERT INTO Ligas (Nombre) VALUES (?)", [Nombre]) as any;
 
         console.log("Liga insertada:", result);
         return NextResponse.json({ message: "Liga insertada exitosamente", result }, { status: 201 });

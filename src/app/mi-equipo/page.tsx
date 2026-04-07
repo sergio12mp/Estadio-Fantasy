@@ -202,6 +202,15 @@ export default function MiEquipo() {
     fetchJornadas();
   }, [idJornadaActual]);
 
+  // Recargar cartas con puntos de la jornada seleccionada
+  useEffect(() => {
+    if (!manager || selectedJornada === null) return;
+    fetch(`/api/cartas-manager?managerId=${manager.idManager}&idJornada=${selectedJornada}`)
+      .then(r => r.json())
+      .then(data => { if (data.cartasJugador) setCartasJugadorManagerDB(data.cartasJugador); })
+      .catch(console.error);
+  }, [manager, selectedJornada]);
+
   useEffect(() => {
     const fetchPlantilla = async () => {
       if (!manager || selectedJornada === null) return;
