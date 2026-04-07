@@ -46,23 +46,57 @@ function AdminContent() {
   const [calcStatus, setCalcStatus] = useState<string | null>(null);
   const [calculating, setCalculating] = useState(false);
 
+  const CHUNK_ROWS = 400;
+
+  async function sendCSVChunk(csvText: string, fieldName: "file" | "filePorteros"): Promise<{ filas: number; filasPorteros?: number }> {
+    const blob = new Blob([csvText], { type: "text/csv" });
+    const formData = new FormData();
+    formData.append(fieldName, blob, "chunk.csv");
+    const res = await fetch("/api/procesarCSV", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? data.message ?? `HTTP ${res.status}`);
+    return data;
+  }
+
+  function splitCSV(text: string, chunkSize: number): string[] {
+    const lines = text.split("\n");
+    const header = lines[0];
+    const dataLines = lines.slice(1).filter((l) => l.trim().length > 0);
+    const chunks: string[] = [];
+    for (let i = 0; i < dataLines.length; i += chunkSize) {
+      chunks.push([header, ...dataLines.slice(i, i + chunkSize)].join("\n"));
+    }
+    return chunks.length > 0 ? chunks : [header];
+  }
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
     setUploading(true);
     setUploadStatus(null);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      if (filePorteros) formData.append("filePorteros", filePorteros);
-      const res = await fetch("/api/procesarCSV", { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        const portMsg = data.filasPorteros != null ? ` (${data.filasPorteros} porteros actualizados)` : "";
-        setUploadStatus(`✅ CSV procesado: ${data.filas} filas importadas.${portMsg}`);
-      } else {
-        setUploadStatus(`❌ Error: ${data.error ?? data.message ?? "Error desconocido"}`);
+      const csvText = await file.text();
+      const chunks = splitCSV(csvText, CHUNK_ROWS);
+      let totalFilas = 0;
+      for (let i = 0; i < chunks.length; i++) {
+        setUploadStatus(`Enviando lote ${i + 1} de ${chunks.length}...`);
+        const data = await sendCSVChunk(chunks[i], "file");
+        totalFilas += data.filas ?? 0;
       }
+
+      let totalPorteros = 0;
+      if (filePorteros) {
+        const csvPorteros = await filePorteros.text();
+        const chunksPorteros = splitCSV(csvPorteros, CHUNK_ROWS);
+        for (let i = 0; i < chunksPorteros.length; i++) {
+          setUploadStatus(`Enviando porteros, lote ${i + 1} de ${chunksPorteros.length}...`);
+          const data = await sendCSVChunk(chunksPorteros[i], "filePorteros");
+          totalPorteros += data.filasPorteros ?? 0;
+        }
+      }
+
+      const portMsg = filePorteros ? ` (${totalPorteros} porteros actualizados)` : "";
+      setUploadStatus(`✅ CSV procesado: ${totalFilas} filas importadas.${portMsg}`);
     } catch (err: any) {
       setUploadStatus(`❌ Error de red: ${err.message}`);
     } finally {
