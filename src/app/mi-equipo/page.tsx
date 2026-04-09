@@ -5,6 +5,13 @@ import { useAuth } from '@/context/auth-context';
 import RequireAuth from '@/components/RequireAuth';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
+const COSTE_BASE_FE: Record<string, number> = {
+  'Común': 1, 'Comun': 1,
+  'Raro': 2, 'Rara': 2,
+  'Épico': 3, 'Epico': 3, 'Épica': 3, 'Epica': 3,
+  'Legendario': 4, 'Legendaria': 4,
+};
+
 const RAREZA_MAP: Record<string, 'Común' | 'Raro' | 'Épico' | 'Legendario'> = {
   'comun': 'Común', 'común': 'Común',
   'raro': 'Raro', 'rara': 'Raro',
@@ -113,6 +120,10 @@ export default function MiEquipo() {
 
   const [jornadasDisponibles, setJornadasDisponibles] = useState<number[]>([]);
   const [selectedJornada, setSelectedJornada] = useState<number | null>(null);
+
+  const [costes, setCostes] = useState<Record<number, { costeBase: number; incremento: number; costeTotal: number }>>({});
+  const [limiteUso, setLimiteUso] = useState(100);
+  const [limiteClub, setLimiteClub] = useState(4);
 
   const isEditingAllowed =
     selectedJornada !== null && selectedJornada === idJornadaActual;
@@ -252,6 +263,32 @@ export default function MiEquipo() {
 
     fetchPlantilla();
   }, [manager, selectedJornada]);
+
+  // Cargar costes de uso cuando cambia la jornada
+  useEffect(() => {
+    if (selectedJornada === null) return;
+    fetch(`/api/plantilla/uso?idJornada=${selectedJornada}`)
+      .then(r => r.json())
+      .then(data => {
+        setCostes(data.costes ?? {});
+        setLimiteUso(data.limiteUso ?? 100);
+        setLimiteClub(data.limiteClub ?? 4);
+      })
+      .catch(console.error);
+  }, [selectedJornada]);
+
+  // Uso total de la plantilla actual
+  const usoTotal = useMemo(() => {
+    let total = 0;
+    plantillaActual.forEach(player => {
+      const info = costes[player.idJugador];
+      total += info?.costeTotal ?? (COSTE_BASE_FE[player.Rareza] ?? 1);
+      for (const obj of player.objetosEquipados) {
+        total += COSTE_BASE_FE[obj.Rareza] ?? 1;
+      }
+    });
+    return total;
+  }, [plantillaActual, costes]);
 
   const handleOpenPlayerSelectionModal = useCallback((
     posicion: PosicionFrontend,
@@ -431,7 +468,10 @@ export default function MiEquipo() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Error al guardar la plantilla: ${errorData.error || response.statusText}`);
+        // 422 = validación de límites (mensaje directo del servidor)
+        const msg = errorData.error || response.statusText;
+        setToast({ message: msg, type: 'error' });
+        return;
       }
 
       const result = await response.json();
@@ -467,6 +507,7 @@ export default function MiEquipo() {
                         className="relative w-44 rounded-xl flex flex-col items-center justify-start m-1 p-1 text-white shadow-md border border-white/10"
                     >
                         {currentPlayer ? (
+                            <>
                             <PlayerCard
                                 carta={currentPlayer}
                                 fieldMode
@@ -477,6 +518,10 @@ export default function MiEquipo() {
                                     handleOpenObjectSelectionModal(currentPlayer, currentIndex);
                                 }}
                             />
+                            <div className="mt-0.5 text-[10px] text-white/70 text-center">
+                              Uso: {costes[currentPlayer.idJugador]?.costeTotal ?? (COSTE_BASE_FE[currentPlayer.Rareza] ?? 1)}
+                            </div>
+                            </>
                         ) : (
                             <div className="flex flex-col items-center gap-1 py-2">
                                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-xs font-bold">
@@ -507,7 +552,7 @@ export default function MiEquipo() {
         });
 
         return rows;
-    }, [plantillaActual, currentFormation, handleReconfigurePlayer, handleOpenObjectSelectionModal, isEditingAllowed]);
+    }, [plantillaActual, currentFormation, handleReconfigurePlayer, handleOpenObjectSelectionModal, isEditingAllowed, costes]);
   // ESTOS RETURNS CONDICIONALES DEBEN IR DESPUÉS DE LA DEFINICIÓN DE TODOS LOS HOOKS.
   if (authLoading || isLoading) {
     return <div className="text-center text-white text-xl mt-8">Cargando equipo...</div>;
@@ -568,14 +613,22 @@ export default function MiEquipo() {
             </button>
           </div>
 
-          <div className="text-lg mb-4 text-center flex justify-center gap-8">
+          <div className="text-lg mb-4 text-center flex justify-center gap-8 flex-wrap">
             <span>Jugadores en plantilla: {plantillaActual.size} / {totalSlots}</span>
+            <span className={usoTotal > limiteUso ? 'text-red-400 font-bold' : usoTotal > limiteUso * 0.85 ? 'text-yellow-400 font-bold' : 'text-green-400 font-bold'}>
+              Uso: {usoTotal} / {limiteUso}
+            </span>
             {puntosJornada != null && (
               <span className="text-yellow-400 font-bold">
                 Puntos jornada {selectedJornada}: {puntosJornada}
               </span>
             )}
           </div>
+          {usoTotal > limiteUso && (
+            <div className="mb-4 p-3 bg-red-900/60 border border-red-500 rounded-lg text-center text-red-300 text-sm font-medium">
+              El uso total ({usoTotal}) supera el límite de {limiteUso}. Reduce jugadores o cambia cartas por otras de menor rareza.
+            </div>
+          )}
 
           {/* Campo de fútbol */}
           <div className="relative rounded-2xl overflow-hidden border-4 border-green-600/40"

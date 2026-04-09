@@ -153,6 +153,120 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "managerId o idJornada no son números válidos." }, { status: 400 });
         }
 
+        // ── Validaciones de límites ──────────────────────────────────────────
+        // Leer configuración
+        const [configRows]: any = await db.query(
+            `SELECT clave, valor FROM Config WHERE clave IN ('limite_jugadores_por_club', 'limite_uso_plantilla')`
+        );
+        const configData = Array.isArray(configRows[0]) ? configRows[0] : configRows;
+        const configMap: Record<string, number> = {};
+        for (const row of configData) configMap[row.clave] = parseInt(row.valor);
+        const limiteClub = configMap['limite_jugadores_por_club'] ?? 4;
+        const limiteUso  = configMap['limite_uso_plantilla'] ?? 100;
+
+        // Costes base por rareza
+        const COSTE_BASE: Record<string, number> = {
+            'Común': 1, 'Comun': 1,
+            'Raro': 2, 'Rara': 2,
+            'Épico': 3, 'Epico': 3, 'Épica': 3, 'Epica': 3,
+            'Legendario': 4, 'Legendaria': 4,
+        };
+
+        // Obtener detalles de cada carta en la plantilla (jugador + objetos)
+        const idsCartasJugador = jugadoresParaGuardar.map((j: any) => j.idCartaJugador).filter(Boolean);
+
+        if (idsCartasJugador.length > 0) {
+            const placeholders = idsCartasJugador.map(() => '?').join(',');
+
+            // Info de jugadores: rareza, equipo, idJugador
+            const [cartasRows]: any = await db.query(
+                `SELECT cj.idCartaJugador, cj.Rareza, j.idJugador, e.idEquipo, e.Nombre AS NombreEquipo
+                 FROM CartaJugador cj
+                 JOIN Jugador j ON j.idJugador = cj.Jugador_idJugador
+                 JOIN Equipo e ON e.idEquipo = j.idEquipo
+                 WHERE cj.idCartaJugador IN (${placeholders})`,
+                idsCartasJugador
+            );
+            const cartasData: any[] = Array.isArray(cartasRows[0]) ? cartasRows[0] : cartasRows;
+
+            // Validar límite por club
+            const conteoClub: Record<number, { nombre: string; count: number }> = {};
+            for (const c of cartasData) {
+                if (!conteoClub[c.idEquipo]) conteoClub[c.idEquipo] = { nombre: c.NombreEquipo, count: 0 };
+                conteoClub[c.idEquipo].count++;
+            }
+            for (const [, datos] of Object.entries(conteoClub)) {
+                if (datos.count > limiteClub) {
+                    return NextResponse.json({
+                        error: `Límite de club superado: máximo ${limiteClub} jugadores del mismo equipo. Tienes ${datos.count} de ${datos.nombre}.`,
+                        tipo: 'limite_club',
+                    }, { status: 422 });
+                }
+            }
+
+            // Calcular incremento de uso por jornada anterior
+            const [jornadaAntRows]: any = await db.query(
+                `SELECT idJornada FROM Jornada WHERE idJornada < ? ORDER BY idJornada DESC LIMIT 1`,
+                [idJornadaNum]
+            );
+            const jornadaAntData = Array.isArray(jornadaAntRows[0]) ? jornadaAntRows[0] : jornadaAntRows;
+            const idJornadaAnterior: number | null = jornadaAntData[0]?.idJornada ?? null;
+
+            const incrementoPorJugador: Record<number, number> = {};
+            if (idJornadaAnterior !== null) {
+                const [totalMgRows]: any = await db.query(`SELECT COUNT(*) AS total FROM Manager`);
+                const totalManagers = (Array.isArray(totalMgRows[0]) ? totalMgRows[0] : totalMgRows)[0]?.total ?? 1;
+
+                const idsJugadores = cartasData.map((c: any) => c.idJugador);
+                const placJ = idsJugadores.map(() => '?').join(',');
+                const [usosRows]: any = await db.query(
+                    `SELECT cj.Jugador_idJugador AS idJugador, COUNT(DISTINCT p.idManager) AS numManagers
+                     FROM Plantilla p
+                     JOIN PlantillaJugadorObjeto pjo ON pjo.idPlantilla = p.idPlantilla
+                     JOIN CartaJugador cj ON cj.idCartaJugador = pjo.idCartaJugador
+                     WHERE p.idJornada = ? AND cj.Jugador_idJugador IN (${placJ})
+                     GROUP BY cj.Jugador_idJugador`,
+                    [idJornadaAnterior, ...idsJugadores]
+                );
+                const usosData = Array.isArray(usosRows[0]) ? usosRows[0] : usosRows;
+                for (const row of usosData) {
+                    const pct = (row.numManagers / totalManagers) * 100;
+                    incrementoPorJugador[row.idJugador] =
+                        pct <= 20 ? 0 : pct <= 40 ? 1 : pct <= 60 ? 2 : pct <= 80 ? 3 : 4;
+                }
+            }
+
+            // Calcular uso total de jugadores
+            const cartaMap = new Map(cartasData.map((c: any) => [c.idCartaJugador, c]));
+            let usoTotal = 0;
+
+            for (const jugador of jugadoresParaGuardar) {
+                const carta = cartaMap.get(jugador.idCartaJugador);
+                if (!carta) continue;
+                const base = COSTE_BASE[carta.Rareza] ?? 1;
+                const inc  = incrementoPorJugador[carta.idJugador] ?? 0;
+                usoTotal += base + inc;
+
+                // Objetos equipados
+                const objetos: any[] = jugador.objetosEquipados ?? [];
+                for (const obj of objetos) {
+                    if (!obj) continue;
+                    const rareza = typeof obj === 'object' ? obj.Rareza : null;
+                    usoTotal += COSTE_BASE[rareza] ?? 1;
+                }
+            }
+
+            if (usoTotal > limiteUso) {
+                return NextResponse.json({
+                    error: `El uso total de la plantilla (${usoTotal}) supera el límite permitido de ${limiteUso}.`,
+                    tipo: 'limite_uso',
+                    usoTotal,
+                    limiteUso,
+                }, { status: 422 });
+            }
+        }
+        // ── Fin validaciones ────────────────────────────────────────────────
+
         let idPlantillaActual: number;
 
         // Paso 1: Verificar si ya existe una plantilla para esta jornada y manager

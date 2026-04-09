@@ -585,6 +585,12 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Config` (
 INSERT INTO `mydb`.`Config` (`clave`, `valor`)
 VALUES ('fecha_actual_simulada', NOW());
 
+-- Límites de equipo
+INSERT INTO `mydb`.`Config` (`clave`, `valor`) VALUES ('limite_jugadores_por_club', '4')
+  ON DUPLICATE KEY UPDATE `valor` = VALUES(`valor`);
+INSERT INTO `mydb`.`Config` (`clave`, `valor`) VALUES ('limite_uso_plantilla', '100')
+  ON DUPLICATE KEY UPDATE `valor` = VALUES(`valor`);
+
 
 -- -----------------------------------------------------
 -- Table `mydb`.`PosicionOverride`
