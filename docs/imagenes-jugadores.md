@@ -59,7 +59,7 @@ con `public_id` = `idJugador`. No sobreescribe las que ya existen.
 
 ## Variables de entorno necesarias
 
-En `.env` (local) y en Railway (solo `NEXT_PUBLIC_`):
+En `.env` (local) y en Vercel (solo `NEXT_PUBLIC_`):
 
 ```env
 CLOUDINARY_CLOUD_NAME=diwnmaiuq
@@ -69,16 +69,38 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=diwnmaiuq
 ```
 
 > `CLOUDINARY_API_KEY` y `CLOUDINARY_API_SECRET` solo se necesitan para subir imágenes (local).
-> En Railway solo hace falta `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`.
+> En Vercel solo hace falta `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`.
 
 ---
 
 ## URL de las imágenes
 
+Las imágenes se sirven con transformaciones automáticas de Cloudinary para optimizar la carga:
+
 ```
-https://res.cloudinary.com/diwnmaiuq/image/upload/estadio-fantasy/jugadores/{idJugador}.jpg
+https://res.cloudinary.com/diwnmaiuq/image/upload/w_80,h_80,c_fill,f_auto,q_auto/estadio-fantasy/jugadores/{idJugador}.jpg
 ```
+
+Parámetros de transformación:
+- `w_80,h_80,c_fill` — redimensiona al tamaño exacto del avatar (80×80px)
+- `f_auto` — sirve WebP en navegadores compatibles
+- `q_auto` — compresión automática (~3KB por imagen vs ~30KB original)
 
 El componente `AlbumPlayerCard` construye esta URL automáticamente si
 `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` está definida. Si no, usa el fallback local
 `/images/jugadores/{idJugador}.jpg`.
+
+Los jugadores sin foto muestran su inicial como avatar.
+
+---
+
+## Configuración en Next.js
+
+El dominio de Cloudinary está declarado en `next.config.mjs` para permitir
+el uso del componente `<Image>` optimizado (lazy loading automático):
+
+```js
+images: {
+    remotePatterns: [{ protocol: 'https', hostname: 'res.cloudinary.com' }]
+}
+```
