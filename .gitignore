@@ -26,7 +26,14 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+
+# player images (stored in Cloudinary)
+/public/images/jugadores/
+
+# generated data files
+r-scripts/jugadores_db.csv
 
 # vercel
 .vercel

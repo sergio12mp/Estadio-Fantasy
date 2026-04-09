@@ -586,6 +586,26 @@ INSERT INTO `mydb`.`Config` (`clave`, `valor`)
 VALUES ('fecha_actual_simulada', NOW());
 
 
+-- -----------------------------------------------------
+-- Table `mydb`.`PosicionOverride`
+-- Permite al admin fijar la posición frontend de un jugador,
+-- sobrescribiendo el mapeo automático desde FBref.
+-- Exportar con GET /api/admin/posiciones/export para persistir tras resets.
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `mydb`.`PosicionOverride`;
+
+CREATE TABLE IF NOT EXISTS `mydb`.`PosicionOverride` (
+  `idJugador`        INT         NOT NULL,
+  `posicionFrontend` ENUM('POR','DEF','MED','DEL') NOT NULL,
+  `updatedAt`        TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`idJugador`),
+  CONSTRAINT `fk_PosicionOverride_Jugador`
+    FOREIGN KEY (`idJugador`)
+    REFERENCES `mydb`.`Jugador` (`idJugador`)
+    ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE = InnoDB;
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;

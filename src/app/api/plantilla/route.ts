@@ -1,7 +1,7 @@
 // app/api/plantilla/route.ts
 import { db } from "@/lib/mysql";
 import { NextRequest, NextResponse } from "next/server";
-import { getPosicionFrontend } from '@/lib/data'; // <--- ¡CAMBIO AQUÍ!
+import { mapearPosicion, cargarOverrides } from '@/lib/posicion';
 
 export async function GET(req: NextRequest) {
     try {
@@ -77,6 +77,10 @@ export async function GET(req: NextRequest) {
             return 0;
         }
 
+        // Cargar overrides de posición para todos los jugadores de la plantilla
+        const idsJugadores = jugadoresEnCampoData.map((r: any) => r.idJugador as number);
+        const overrides = await cargarOverrides(idsJugadores);
+
         const jugadoresEnCampoSparse: (any | null)[] = Array(11).fill(null);
         for (const row of jugadoresEnCampoData) {
             const pos: number = row.posicionEnPlantilla;
@@ -109,7 +113,7 @@ export async function GET(req: NextRequest) {
                 Edad: row.Edad,
                 Pais: row.Pais,
                 Posicion: row.PosicionJugadorDB,
-                PosicionFrontend: getPosicionFrontend(row.PosicionJugadorDB),
+                PosicionFrontend: overrides.get(row.idJugador) ?? mapearPosicion(row.PosicionJugadorDB),
                 NombreEquipo: row.NombreEquipo,
                 Rareza: row.RarezaCartaJugador,
                 Precio: row.Precio,

@@ -10,10 +10,10 @@ import {
 const PITTY_MAX = 50;
 
 const BASE_PROBABILITIES: Record<Rarity, number> = {
-  Comun: 0.60,
-  Rara: 0.25,
-  Epica: 0.10,
-  Legendaria: 0.05,
+  Comun: 0.72,
+  Rara: 0.20,
+  Epica: 0.06,
+  Legendaria: 0.02,
 };
 
 type DBRow = { id: number; nombre: string };
