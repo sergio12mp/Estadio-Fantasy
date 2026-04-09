@@ -79,8 +79,8 @@ export interface CartaJugadorManager {
     Rareza: string; // Puede ser "Común", "Raro", "Épico", "Legendario"
     Jugador_idJugadorDB: number; // ID del jugador base
     NombreJugador: string;
-    PosicionJugadorDB: string; // <--- CAMBIO AQUÍ: Ahora puede ser un string con múltiples posiciones.
-                               // La función getPosicionFrontend se encargará de esto.
+    PosicionJugadorDB: string;
+    PosicionOverride?: string | null; // Posición forzada desde la tabla PosicionOverride (si existe)
     Edad: string;
     Pais: string;
     Precio: number; // Precio de la carta

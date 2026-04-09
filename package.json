@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "cdbreact": "^1.5.19",
+    "cloudinary": "^2.9.0",
     "csv-parser": "^3.0.0",
     "firebase": "^11.6.1",
     "firebase-admin": "^13.3.0",

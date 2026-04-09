@@ -287,6 +287,16 @@ function AdminContent() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Panel de Admin</h1>
 
+        {/* Accesos rápidos */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          <a
+            href="/admin/posiciones"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            ⚽ Gestionar posiciones de jugadores
+          </a>
+        </div>
+
         <Section title="Importar Estadísticas (CSV)">
           <p className="text-sm text-gray-500 mb-4">
             Sube el CSV de jugadores (script R — summary) y opcionalmente el CSV de porteros (script R — keeper). Se crearán jornadas, equipos, jugadores y estadísticas automáticamente.

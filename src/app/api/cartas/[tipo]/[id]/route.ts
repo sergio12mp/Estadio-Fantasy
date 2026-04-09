@@ -6,17 +6,17 @@ function reward(rareza: string): number {
   switch (rareza) {
     case 'Comun':
     case 'Común':
-      return 5;
+      return 3;
     case 'Raro':
     case 'Rara':
       return 10;
     case 'Epico':
     case 'Épico':
     case 'Epica':
-      return 15;
+      return 20;
     case 'Legendario':
     case 'Legendaria':
-      return 20;
+      return 40;
     default:
       return 0;
   }

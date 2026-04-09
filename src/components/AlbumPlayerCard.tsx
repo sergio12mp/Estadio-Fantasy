@@ -34,9 +34,12 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
     const config = RAREZA_CONFIG[carta.Rareza] ?? RAREZA_CONFIG['Común'];
     const stars = RAREZA_STARS[carta.Rareza] ?? '★';
     const inicial = carta.Nombre ? carta.Nombre.charAt(0).toUpperCase() : '?';
-    const imageUrl = `/images/jugadores/${carta.id}.png`;
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const imageUrl = cloudName
+        ? `https://res.cloudinary.com/${cloudName}/image/upload/estadio-fantasy/jugadores/${carta.jugadorId}.jpg`
+        : `/images/jugadores/${carta.jugadorId}.jpg`;
     const isComun = carta.Rareza === 'Común';
-    const valorVenta = isComun ? 0 : ({ 'Raro': 10, 'Épico': 15, 'Legendario': 20 }[carta.Rareza] ?? 0);
+    const valorVenta = isComun ? 3 : ({ 'Raro': 10, 'Épico': 20, 'Legendario': 40 }[carta.Rareza] ?? 0);
 
     return (
         <>

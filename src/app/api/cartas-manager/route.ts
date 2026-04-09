@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
           j.idJugador AS Jugador_idJugadorDB,
           j.Nombre AS NombreJugador,
           j.Posicion AS PosicionJugadorDB,
+          po.posicionFrontend AS PosicionOverride,
           j.Edad,
           j.Pais,
           j.Precio,
@@ -37,12 +38,13 @@ export async function GET(req: NextRequest) {
        FROM CartaJugador cj
        JOIN Jugador j ON cj.Jugador_idJugador = j.idJugador
        JOIN Equipo e ON j.idEquipo = e.idEquipo
+       LEFT JOIN PosicionOverride po ON po.idJugador = j.idJugador
        LEFT JOIN Estadisticas es
          ON es.idJugador = j.idJugador
          AND es.Puntos IS NOT NULL
          ${idJornadaNum ? 'AND es.idJornada <= ?' : ''}
        WHERE cj.Manager_idManager = ?
-       GROUP BY cj.idCartaJugador, cj.Rareza, j.idJugador, j.Nombre, j.Posicion, j.Edad, j.Pais, j.Precio, e.Nombre`,
+       GROUP BY cj.idCartaJugador, cj.Rareza, j.idJugador, j.Nombre, j.Posicion, j.Edad, j.Pais, j.Precio, e.Nombre, po.posicionFrontend`,
       idJornadaNum ? [idJornadaNum, managerIdNum] : [managerIdNum]
     );
 

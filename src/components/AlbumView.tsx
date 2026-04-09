@@ -24,6 +24,11 @@ interface AlbumViewProps {
     setFiltroEstadistica: (stat: string) => void;
     filtroEfecto: string;
     setFiltroEfecto: (efecto: string) => void;
+    filtroJornada: number | null;
+    setFiltroJornada: (id: number | null) => void;
+    filtroMinPuntos: string;
+    setFiltroMinPuntos: (v: string) => void;
+    jornadas: { idJornada: number; Nombre: string }[];
     busqueda: string;
     setBusqueda: (busqueda: string) => void;
     mensaje: string;
@@ -77,6 +82,11 @@ export default function AlbumView({
     setFiltroEstadistica,
     filtroEfecto,
     setFiltroEfecto,
+    filtroJornada,
+    setFiltroJornada,
+    filtroMinPuntos,
+    setFiltroMinPuntos,
+    jornadas,
     busqueda,
     setBusqueda,
     mensaje,
@@ -228,6 +238,36 @@ export default function AlbumView({
                                 </option>
                             ))}
                         </select>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Filtros de puntos y jornada (solo jugadores) ── */}
+            {mostrarJugador && (
+                <div className="flex flex-wrap gap-2 items-center mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Puntos</span>
+                    <div className="flex items-center gap-1">
+                        <label className="text-xs text-gray-500">Jornada hasta</label>
+                        <select
+                            value={filtroJornada ?? ''}
+                            onChange={(e) => setFiltroJornada(e.target.value ? parseInt(e.target.value) : null)}
+                            className={selectClass}
+                        >
+                            <option value="">Todas (acumulado total)</option>
+                            {jornadas.map(j => (
+                                <option key={j.idJornada} value={j.idJornada}>{j.Nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <label className="text-xs text-gray-500">Mín. puntos</label>
+                        <input
+                            type="number"
+                            placeholder="0"
+                            value={filtroMinPuntos}
+                            onChange={(e) => setFiltroMinPuntos(e.target.value)}
+                            className={`${selectClass} w-20`}
+                        />
                     </div>
                 </div>
             )}

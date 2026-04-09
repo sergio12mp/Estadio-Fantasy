@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mysql';
 
+// Precios basados en la regla: precio_X = 10 × venta_X, precio_X+1 = 20 × venta_X
+// Venta: Común=3, Rara=10, Épica=20, Legendaria=40 balones
 const PRECIOS_JUGADOR: Record<string, { balones: number; oro: number }> = {
-  Comun:      { balones: 5_000,   oro: 1_000  },
-  Rara:       { balones: 20_000,  oro: 4_000  },
-  Epica:      { balones: 60_000,  oro: 12_000 },
-  Legendaria: { balones: 150_000, oro: 30_000 },
+  Comun:      { balones: 30,  oro: 3  },
+  Rara:       { balones: 100, oro: 10 },
+  Epica:      { balones: 200, oro: 20 },
+  Legendaria: { balones: 400, oro: 40 },
 };
 
 const PRECIOS_OBJETO: Record<string, { balones: number; oro: number }> = {
-  Comun:      { balones: 2_000,  oro: 400  },
-  Rara:       { balones: 5_000,  oro: 1_000 },
-  Epica:      { balones: 12_000, oro: 2_500 },
-  Legendaria: { balones: 30_000, oro: 6_000 },
+  Comun:      { balones: 20,  oro: 2  },
+  Rara:       { balones: 70,  oro: 7  },
+  Epica:      { balones: 140, oro: 14 },
+  Legendaria: { balones: 280, oro: 28 },
 };
 
 export async function GET() {

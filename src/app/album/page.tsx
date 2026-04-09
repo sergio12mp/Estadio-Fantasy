@@ -127,7 +127,11 @@ export default function AlbumPage() {
     return [
       ...cartasJugador.map((c: CartaJugadorManager) => {
         let posicionFrontend = 'DEL';
-        try { posicionFrontend = getPosicionFrontend(c.PosicionJugadorDB); } catch {}
+        if (c.PosicionOverride) {
+          posicionFrontend = c.PosicionOverride;
+        } else {
+          try { posicionFrontend = getPosicionFrontend(c.PosicionJugadorDB); } catch {}
+        }
         return { tipo: 'jugador' as const, Rareza: normalizeRareza(c.Rareza), Nombre: c.NombreJugador, NombreEquipo: c.NombreEquipo, id: c.idCartaJugador, Puntos: c.Puntos ?? null, jugadorId: c.Jugador_idJugadorDB, posicion: c.PosicionJugadorDB, posicionFrontend, edad: c.Edad?.split('-')[0] ?? '', pais: c.Pais, precio: c.Precio, unidades: countsByJugador[c.Jugador_idJugadorDB] ?? 1 };
       }),
       ...cartasObjeto.map((c: CartaObjetoManager) => ({ tipo: 'objeto' as const, Rareza: normalizeRareza(c.Rareza), Nombre: c.NombreObjeto, id: c.idCartaObjeto, Puntos: 0, idObjetos: c.Objeto_idObjetoDB, Efecto: c.EfectoObjeto, ValorEfecto: c.ValorEfecto, Descripcion: c.DescripcionObjeto, Estadistica: c.EstadisticaObjeto })),
@@ -138,57 +142,16 @@ export default function AlbumPage() {
     const cargar = async () => {
       if (!manager) return;
       const jornadaParam = filtroJornada ? `&idJornada=${filtroJornada}` : '';
-      const resJug = await fetch(`/api/cartas-manager?managerId=${manager.idManager}${jornadaParam}`);
+      const [resJug, resObj] = await Promise.all([
+        fetch(`/api/cartas-manager?managerId=${manager.idManager}${jornadaParam}`),
+        fetch(`/api/cartas-manager/objetos?managerId=${manager.idManager}`),
+      ]);
       const dataJug = await resJug.json();
-      const resObj = await fetch(`/api/cartas-manager/objetos?managerId=${manager.idManager}`);
       const dataObj = await resObj.json();
-
-      const cartasJugador: CartaJugadorManager[] = dataJug.cartasJugador || [];
-      const cartasObjeto: CartaObjetoManager[] = dataObj.cartasObjeto || [];
-
-      // Count units per jugador
-      const countsByJugador: Record<number, number> = {};
-      cartasJugador.forEach((c) => {
-        countsByJugador[c.Jugador_idJugadorDB] = (countsByJugador[c.Jugador_idJugadorDB] || 0) + 1;
-      });
-
-      const combinadas: Carta[] = [
-        ...cartasJugador.map((c: CartaJugadorManager) => {
-          let posicionFrontend = 'DEL';
-          try { posicionFrontend = getPosicionFrontend(c.PosicionJugadorDB); } catch {}
-          return {
-            tipo: 'jugador' as const,
-            Rareza: normalizeRareza(c.Rareza),
-            Nombre: c.NombreJugador,
-            NombreEquipo: c.NombreEquipo,
-            id: c.idCartaJugador,
-            Puntos: c.Puntos ?? 0,
-            jugadorId: c.Jugador_idJugadorDB,
-            posicion: c.PosicionJugadorDB,
-            posicionFrontend,
-            edad: c.Edad?.split('-')[0] ?? '',
-            pais: c.Pais,
-            precio: c.Precio,
-            unidades: countsByJugador[c.Jugador_idJugadorDB] ?? 1,
-          };
-        }),
-        ...cartasObjeto.map((c: CartaObjetoManager) => ({
-          tipo: 'objeto' as const,
-          Rareza: normalizeRareza(c.Rareza),
-          Nombre: c.NombreObjeto,
-          id: c.idCartaObjeto,
-          Puntos: 0,
-          idObjetos: c.Objeto_idObjetoDB,
-          Efecto: c.EfectoObjeto,
-          ValorEfecto: c.ValorEfecto,
-          Descripcion: c.DescripcionObjeto,
-          Estadistica: c.EstadisticaObjeto,
-        })),
-      ];
-      setCartas(combinadas);
+      setCartas(mapearCartas(dataJug.cartasJugador || [], dataObj.cartasObjeto || []));
     };
     cargar();
-  }, [manager]);
+  }, [manager, filtroJornada]);
 
   const eliminarCarta = async (carta: Carta) => {
     if (!manager) return;
@@ -365,22 +328,14 @@ export default function AlbumPage() {
         setCurrency({ ...currency, oro: data.oro, balones: data.balones });
         setTiendaToast(`✅ ¡${item.Nombre} añadido a tu colección!`);
         // Refresh owned cards
-        const resJug = await fetch(`/api/cartas-manager?managerId=${manager.idManager}`);
-        const dataJug = await resJug.json();
-        const resObj = await fetch(`/api/cartas-manager/objetos?managerId=${manager.idManager}`);
-        const dataObj = await resObj.json();
-        const cartasJugador: CartaJugadorManager[] = dataJug.cartasJugador || [];
-        const cartasObjeto: CartaObjetoManager[] = dataObj.cartasObjeto || [];
-        const countsByJugador: Record<number, number> = {};
-        cartasJugador.forEach((c) => { countsByJugador[c.Jugador_idJugadorDB] = (countsByJugador[c.Jugador_idJugadorDB] || 0) + 1; });
-        setCartas([
-          ...cartasJugador.map((c) => {
-            let posicionFrontend = 'DEL';
-            try { posicionFrontend = getPosicionFrontend(c.PosicionJugadorDB); } catch {}
-            return { tipo: 'jugador' as const, Rareza: normalizeRareza(c.Rareza), Nombre: c.NombreJugador, NombreEquipo: c.NombreEquipo, id: c.idCartaJugador, Puntos: c.Puntos ?? 0, jugadorId: c.Jugador_idJugadorDB, posicion: c.PosicionJugadorDB, posicionFrontend, edad: c.Edad?.split('-')[0] ?? '', pais: c.Pais, precio: c.Precio, unidades: countsByJugador[c.Jugador_idJugadorDB] ?? 1 };
-          }),
-          ...cartasObjeto.map((c) => ({ tipo: 'objeto' as const, Rareza: normalizeRareza(c.Rareza), Nombre: c.NombreObjeto, id: c.idCartaObjeto, Puntos: 0, idObjetos: c.Objeto_idObjetoDB, Efecto: c.EfectoObjeto, ValorEfecto: c.ValorEfecto, Descripcion: c.DescripcionObjeto, Estadistica: c.EstadisticaObjeto })),
+        const jornadaParam = filtroJornada ? `&idJornada=${filtroJornada}` : '';
+        const [resJug2, resObj2] = await Promise.all([
+          fetch(`/api/cartas-manager?managerId=${manager.idManager}${jornadaParam}`),
+          fetch(`/api/cartas-manager/objetos?managerId=${manager.idManager}`),
         ]);
+        const dataJug2 = await resJug2.json();
+        const dataObj2 = await resObj2.json();
+        setCartas(mapearCartas(dataJug2.cartasJugador || [], dataObj2.cartasObjeto || []));
       }
     } finally {
       setTiendaComprandoKey(null);
@@ -405,6 +360,7 @@ export default function AlbumPage() {
   }, [tiendaItems, tiendaTipo, tiendaRareza, tiendaBusqueda]);
 
   const cartasFiltradasYOrdenadas = useMemo(() => {
+    const minPts = filtroMinPuntos !== '' ? parseFloat(filtroMinPuntos) : null;
     const filtradas = cartas.filter((c) => {
       if (filtroTipoAlbum !== 'todos' && c.tipo !== filtroTipoAlbum) return false;
       if (filtroRareza.length > 0 && !filtroRareza.some(r => normalizeString(r) === normalizeString(c.Rareza))) return false;
@@ -412,6 +368,7 @@ export default function AlbumPage() {
       if (filtroPosicion !== 'todos' && c.tipo === 'jugador' && c.posicionFrontend !== filtroPosicion) return false;
       if (filtroEstadistica !== 'todos' && c.tipo === 'objeto' && c.Estadistica !== filtroEstadistica) return false;
       if (filtroEfecto !== 'todos' && c.tipo === 'objeto' && c.Efecto !== filtroEfecto) return false;
+      if (minPts !== null && c.tipo === 'jugador' && (c.Puntos ?? 0) < minPts) return false;
 
       if (busqueda) {
         const q = busqueda.toLowerCase();
@@ -438,7 +395,7 @@ export default function AlbumPage() {
     });
 
     return ordenadas;
-  }, [cartas, filtroTipoAlbum, filtroRareza, filtroEquipo, filtroPosicion, filtroEstadistica, filtroEfecto, busqueda, ordenarPor]);
+  }, [cartas, filtroTipoAlbum, filtroRareza, filtroEquipo, filtroPosicion, filtroEstadistica, filtroEfecto, filtroMinPuntos, busqueda, ordenarPor]);
 
   const handleRarezaChange = (rareza: string) => {
     setFiltroRareza(prev =>
@@ -456,6 +413,8 @@ export default function AlbumPage() {
     setFiltroPosicion('todos');
     setFiltroEstadistica('todos');
     setFiltroEfecto('todos');
+    setFiltroJornada(null);
+    setFiltroMinPuntos('');
     setBusqueda('');
     setOrdenarPor('nombre');
     setPaginaActual(1);
@@ -632,6 +591,11 @@ export default function AlbumPage() {
           setFiltroEstadistica={setFiltroEstadistica}
           filtroEfecto={filtroEfecto}
           setFiltroEfecto={setFiltroEfecto}
+          filtroJornada={filtroJornada}
+          setFiltroJornada={(id) => { setFiltroJornada(id); setPaginaActual(1); }}
+          filtroMinPuntos={filtroMinPuntos}
+          setFiltroMinPuntos={(v) => { setFiltroMinPuntos(v); setPaginaActual(1); }}
+          jornadas={jornadas}
           busqueda={busqueda}
           setBusqueda={setBusqueda}
           mensaje={mensaje}
