@@ -191,6 +191,41 @@ function AdminContent() {
     }
   };
 
+  // Configuración de límites
+  const [config, setConfig] = useState<Record<string, number>>({});
+  const [configSaving, setConfigSaving] = useState<string | null>(null);
+  const [configStatus, setConfigStatus] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetch('/api/admin/config')
+      .then(r => r.json())
+      .then(data => setConfig(data))
+      .catch(() => {});
+  }, []);
+
+  const handleSaveConfig = async (clave: string, valor: number) => {
+    setConfigSaving(clave);
+    setConfigStatus(prev => ({ ...prev, [clave]: '' }));
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clave, valor }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setConfig(prev => ({ ...prev, [clave]: valor }));
+        setConfigStatus(prev => ({ ...prev, [clave]: '✅ Guardado' }));
+      } else {
+        setConfigStatus(prev => ({ ...prev, [clave]: `❌ ${data.error}` }));
+      }
+    } catch (err: any) {
+      setConfigStatus(prev => ({ ...prev, [clave]: `❌ Error de red` }));
+    } finally {
+      setConfigSaving(null);
+    }
+  };
+
   // Calcular jornada
   const [idJornada, setIdJornada] = useState("");
   const [calcStatus, setCalcStatus] = useState<string | null>(null);
@@ -476,6 +511,42 @@ function AdminContent() {
                 {avanzarStatus}
               </p>
             )}
+          </div>
+        </Section>
+
+        <Section title="Límites de equipo">
+          <p className="text-sm text-gray-500 mb-4">
+            Configura los límites que se aplican al guardar la plantilla de cada manager.
+          </p>
+          <div className="flex flex-col gap-4">
+            {[
+              { clave: 'limite_jugadores_por_club', label: 'Máximo jugadores del mismo club', min: 1, max: 11 },
+              { clave: 'limite_uso_plantilla', label: 'Límite de uso total de la plantilla', min: 11, max: 500 },
+            ].map(({ clave, label, min, max }) => (
+              <div key={clave} className="flex items-center gap-3 flex-wrap">
+                <label className="text-sm font-medium text-gray-700 w-64">{label}</label>
+                <input
+                  type="number"
+                  min={min}
+                  max={max}
+                  value={config[clave] ?? ''}
+                  onChange={(e) => setConfig(prev => ({ ...prev, [clave]: parseInt(e.target.value) }))}
+                  className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <button
+                  onClick={() => handleSaveConfig(clave, config[clave])}
+                  disabled={configSaving === clave || !config[clave]}
+                  className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
+                >
+                  {configSaving === clave ? 'Guardando...' : 'Guardar'}
+                </button>
+                {configStatus[clave] && (
+                  <span className={`text-sm font-medium ${configStatus[clave].startsWith('✅') ? 'text-green-700' : 'text-red-600'}`}>
+                    {configStatus[clave]}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
         </Section>
 
