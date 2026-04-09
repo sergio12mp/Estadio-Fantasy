@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Carta } from '@/app/album/page';
 
@@ -28,6 +29,7 @@ const RAREZA_STARS: Record<string, string> = {
 
 export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProps) {
     const [showModal, setShowModal] = useState(false);
+    const [imgError, setImgError] = useState(false);
 
     if (!carta) return null;
 
@@ -35,8 +37,11 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
     const stars = RAREZA_STARS[carta.Rareza] ?? '★';
     const inicial = carta.Nombre ? carta.Nombre.charAt(0).toUpperCase() : '?';
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    // w_80,h_80,c_fill: redimensiona al tamaño exacto del avatar
+    // f_auto: WebP en navegadores compatibles
+    // q_auto: compresión automática (~3KB vs ~30KB original)
     const imageUrl = cloudName
-        ? `https://res.cloudinary.com/${cloudName}/image/upload/estadio-fantasy/jugadores/${carta.jugadorId}.jpg`
+        ? `https://res.cloudinary.com/${cloudName}/image/upload/w_80,h_80,c_fill,f_auto,q_auto/estadio-fantasy/jugadores/${carta.jugadorId}.jpg`
         : `/images/jugadores/${carta.jugadorId}.jpg`;
     const isComun = carta.Rareza === 'Común';
     const valorVenta = isComun ? 3 : ({ 'Raro': 10, 'Épico': 20, 'Legendario': 40 }[carta.Rareza] ?? 0);
@@ -56,13 +61,19 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
                         <span className={`text-xs font-bold ${config.starColor} drop-shadow`}>{stars}</span>
                     </div>
                     <div className={`w-20 h-20 rounded-full mx-auto mt-1 border-4 ${config.avatarBorder} bg-white/20 flex items-center justify-center overflow-hidden shadow-lg backdrop-blur-sm relative`}>
-                        <img
-                            src={imageUrl}
-                            alt={carta.Nombre}
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                        <span className="text-white text-3xl font-extrabold select-none absolute">{inicial}</span>
+                        {!imgError && (
+                            <Image
+                                src={imageUrl}
+                                alt={carta.Nombre}
+                                width={80}
+                                height={80}
+                                className="w-full h-full object-cover"
+                                onError={() => setImgError(true)}
+                            />
+                        )}
+                        {imgError && (
+                            <span className="text-white text-3xl font-extrabold select-none">{inicial}</span>
+                        )}
                     </div>
                 </div>
 
