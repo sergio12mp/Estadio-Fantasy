@@ -1,6 +1,8 @@
 // src/components/playerCard.tsx
 import React from 'react';
 import { CartaJugadorEnPlantilla, ObjetoEquipado } from '@/lib/data';
+import { RAREZA_CONFIG, RAREZA_STARS, RAREZA_OBJETO_COLORS } from '@/lib/rareza-config';
+import RarityBadge from '@/components/ui/RarityBadge';
 
 interface PlayerCardProps {
   carta: CartaJugadorEnPlantilla;
@@ -8,27 +10,6 @@ interface PlayerCardProps {
   onClick?: () => void;
   fieldMode?: boolean;
 }
-
-const RAREZA_CONFIG: Record<string, {
-  gradient: string;
-  border: string;
-  badge: string;
-  badgeText: string;
-  avatarBorder: string;
-  starColor: string;
-}> = {
-  'Común':      { gradient: 'from-slate-500 via-slate-600 to-slate-700', border: 'border-slate-300', badge: 'bg-slate-100 text-slate-600', badgeText: 'text-slate-500', avatarBorder: 'border-slate-300', starColor: 'text-slate-400' },
-  'Raro':       { gradient: 'from-blue-500 via-blue-600 to-blue-800',    border: 'border-blue-400',  badge: 'bg-blue-100 text-blue-700',  badgeText: 'text-blue-500',  avatarBorder: 'border-blue-300',  starColor: 'text-blue-400'  },
-  'Épico':      { gradient: 'from-purple-600 via-purple-700 to-purple-900', border: 'border-purple-500', badge: 'bg-purple-100 text-purple-700', badgeText: 'text-purple-500', avatarBorder: 'border-purple-300', starColor: 'text-purple-400' },
-  'Legendario': { gradient: 'from-yellow-400 via-amber-500 to-orange-600', border: 'border-yellow-400', badge: 'bg-yellow-100 text-yellow-700', badgeText: 'text-yellow-600', avatarBorder: 'border-yellow-300', starColor: 'text-yellow-400' },
-};
-
-const RAREZA_STARS: Record<string, string> = {
-  'Común': '★',
-  'Raro': '★★',
-  'Épico': '★★★',
-  'Legendario': '★★★★',
-};
 
 const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, fieldMode }) => {
   if (!carta) return null;
@@ -39,12 +20,6 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
   const maxObjetosSlots = carta.maxObjetosSlots || 0;
   const inicial = carta.Nombre ? carta.Nombre.charAt(0).toUpperCase() : '?';
 
-  const rarezaObjColors: Record<string, string> = {
-    'Común': 'bg-slate-200 border-slate-400',
-    'Raro': 'bg-blue-100 border-blue-400',
-    'Épico': 'bg-purple-100 border-purple-500',
-    'Legendario': 'bg-yellow-100 border-yellow-500',
-  };
 
   if (fieldMode) {
     return (
@@ -92,7 +67,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
                     ? (['Común','Raro','Épico','Legendario'].includes(obj.Rareza) ? obj.Rareza : 'Común')
                     : 'Común';
                   return obj ? (
-                    <div key={i} title={obj.Nombre} className={`w-4 h-4 rounded border flex items-center justify-center text-[8px] ${rarezaObjColors[rNorm] ?? 'bg-gray-100 border-gray-300'}`}>
+                    <div key={i} title={obj.Nombre} className={`w-4 h-4 rounded border flex items-center justify-center text-[8px] ${RAREZA_OBJETO_COLORS[rNorm] ?? 'bg-gray-100 border-gray-300'}`}>
                       🎯
                     </div>
                   ) : (
@@ -143,9 +118,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
 
         {/* Rarity badge */}
         <div className="flex justify-center mb-2">
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.badge}`}>
-            {carta.Rareza}
-          </span>
+          <RarityBadge rareza={carta.Rareza} />
         </div>
 
         {/* Points */}
@@ -183,12 +156,6 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
             <div className="flex flex-wrap gap-1 mb-1">
               {Array.from({ length: maxObjetosSlots }).map((_, i) => {
                 const obj = objetosEquipados[i];
-                const rarezaColors: Record<string, string> = {
-                  'Común': 'bg-slate-200 border-slate-400 text-slate-700',
-                  'Raro': 'bg-blue-100 border-blue-400 text-blue-700',
-                  'Épico': 'bg-purple-100 border-purple-500 text-purple-700',
-                  'Legendario': 'bg-yellow-100 border-yellow-500 text-yellow-700',
-                };
                 const rNorm = obj?.Rareza ? (
                   (['Común','Raro','Épico','Legendario'].includes(obj.Rareza) ? obj.Rareza : 'Común')
                 ) : 'Común';
@@ -196,7 +163,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
                   <div
                     key={i}
                     title={obj.Nombre}
-                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold leading-tight max-w-full ${rarezaColors[rNorm] ?? 'bg-gray-100 border-gray-300 text-gray-600'}`}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold leading-tight max-w-full ${RAREZA_OBJETO_COLORS[rNorm] ?? 'bg-gray-100 border-gray-300 text-gray-600'}`}
                   >
                     <span>🎯</span>
                     <span className="truncate max-w-[60px]">{obj.Nombre}</span>

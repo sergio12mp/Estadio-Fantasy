@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/mysql";
-import { GetJugadores } from "@/database/players";
+import { queryRows } from "@/lib/db-utils";
 import { Jugador } from "@/lib/data";
 
 export async function GET() {
     try {
-        const result = await GetJugadores();
+        const result = await queryRows<Jugador>("SELECT * FROM Jugador");
         if (!result.length) {
             return NextResponse.json({ message: "No se encontraron jugadores" }, { status: 404 });
         }
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
         const [result] = await db.query("INSERT INTO Jugador (Nombre, Edad, Pais, Posicion, Precio, idEquipo) VALUES (?, ?, ?, ?, ?, ?)", [Nombre, Edad, Pais, Posicion, Precio, idEquipo]) as [any, any];
 
-        console.log("Jugador insertado:", result);
+        // console.log("Jugador insertado:", result);
         return NextResponse.json({ message: "Jugador insertado exitosamente", result }, { status: 201 });
     } catch (error) {
         console.error("Error insertando jugador:", error);

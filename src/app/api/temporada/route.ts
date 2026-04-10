@@ -10,10 +10,10 @@ export async function GET() {
     try {
         const [result] = await db.query("SELECT * FROM Temporada") as [Temporada[], any];
         if (!result.length) {
-            console.log("No se encontraron temporadas");
+            // console.log("No se encontraron temporadas");
             return NextResponse.json({ message: "No se encontraron temporadas" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Temporadas encontradas", result });
     } catch (error) {
         console.error("Error al obtener las temporadas:", error);
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
         const [result] = await db.query("INSERT INTO Temporada (Nombre) VALUES (?)", [Nombre]) as [any, any];
 
-        console.log("Temporada insertada:", result);
+        // console.log("Temporada insertada:", result);
         return NextResponse.json({ message: "Temporada insertada exitosamente", result }, { status: 201 });
     } catch (error) {
         console.error("Error insertando temporada:", error);

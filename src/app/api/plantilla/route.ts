@@ -1,5 +1,6 @@
 // app/api/plantilla/route.ts
 import { db } from "@/lib/mysql";
+import { queryOne, queryRows } from "@/lib/db-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { mapearPosicion, cargarOverrides } from '@/lib/posicion';
 
@@ -20,23 +21,18 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "managerId o idJornada no son números válidos" }, { status: 400 });
         }
 
-        // Primero, obtener la plantilla principal
-        const [plantillaRows]: any = await db.query(
+        const plantilla = await queryOne(
             `SELECT idPlantilla, Alineacion, Puntos, idJornada, idManager
              FROM Plantilla
              WHERE idManager = ? AND idJornada = ?`,
             [managerIdNum, idJornadaNum]
         );
 
-        const plantilla = Array.isArray(plantillaRows[0]) ? plantillaRows[0][0] : plantillaRows[0];
-
         if (!plantilla) {
             return NextResponse.json({ error: "Plantilla no encontrada para la jornada y manager especificados." }, { status: 404 });
         }
 
-        // Luego, obtener los jugadores y objetos asociados a esa plantilla,
-        // incluyendo los puntos calculados de las estadísticas de esa jornada.
-        const [jugadoresEnCampoRows]: any = await db.query(
+        const jugadoresEnCampoData = await queryRows(
             `SELECT
                 pjo.idCartaJugador, pjo.posicionEnPlantilla,
                 pjo.idCartaObjeto1, pjo.idCartaObjeto2, pjo.idCartaObjeto3,
@@ -65,10 +61,8 @@ export async function GET(req: NextRequest) {
              LEFT JOIN Estadisticas es ON es.idJugador = j.idJugador AND es.idJornada = ?
              WHERE pjo.idPlantilla = ?
              ORDER BY pjo.posicionEnPlantilla`,
-            [idJornadaNum, plantilla.idPlantilla]
+            [idJornadaNum, (plantilla as any).idPlantilla]
         );
-
-        const jugadoresEnCampoData = Array.isArray(jugadoresEnCampoRows[0]) ? jugadoresEnCampoRows[0] : jugadoresEnCampoRows;
 
         function calcBonus(efecto: string | null, stat: string | null, valor: number | null, puntosBase: number, row: any): number {
             if (!efecto || !valor) return 0;
@@ -77,12 +71,11 @@ export async function GET(req: NextRequest) {
             return 0;
         }
 
-        // Cargar overrides de posición para todos los jugadores de la plantilla
         const idsJugadores = jugadoresEnCampoData.map((r: any) => r.idJugador as number);
         const overrides = await cargarOverrides(idsJugadores);
 
         const jugadoresEnCampoSparse: (any | null)[] = Array(11).fill(null);
-        for (const row of jugadoresEnCampoData) {
+        for (const row of jugadoresEnCampoData as any[]) {
             const pos: number = row.posicionEnPlantilla;
             if (pos < 0 || pos >= 11) continue;
             const puntosBase = row.PuntosJornada ?? 0;
@@ -134,9 +127,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Error interno del servidor al cargar plantilla." }, { status: 500 });
     }
 }
-// app/api/plantilla/route.ts (continúa del GET, añade este POST abajo)
-
-// app/api/plantilla/route.ts (POST - PARTE MODIFICADA)
 
 export async function POST(req: NextRequest) {
     try {
@@ -154,17 +144,14 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Validaciones de límites ──────────────────────────────────────────
-        // Leer configuración
-        const [configRows]: any = await db.query(
+        const configData = await queryRows<{ clave: string; valor: string }>(
             `SELECT clave, valor FROM Config WHERE clave IN ('limite_jugadores_por_club', 'limite_uso_plantilla')`
         );
-        const configData = Array.isArray(configRows[0]) ? configRows[0] : configRows;
         const configMap: Record<string, number> = {};
         for (const row of configData) configMap[row.clave] = parseInt(row.valor);
         const limiteClub = configMap['limite_jugadores_por_club'] ?? 4;
         const limiteUso  = configMap['limite_uso_plantilla'] ?? 100;
 
-        // Costes base por rareza
         const COSTE_BASE: Record<string, number> = {
             'Común': 1, 'Comun': 1,
             'Raro': 2, 'Rara': 2,
@@ -172,22 +159,19 @@ export async function POST(req: NextRequest) {
             'Legendario': 4, 'Legendaria': 4,
         };
 
-        // Obtener detalles de cada carta en la plantilla (jugador + objetos)
         const idsCartasJugador = jugadoresParaGuardar.map((j: any) => j.idCartaJugador).filter(Boolean);
 
         if (idsCartasJugador.length > 0) {
             const placeholders = idsCartasJugador.map(() => '?').join(',');
 
-            // Info de jugadores: rareza, equipo, idJugador
-            const [cartasRows]: any = await db.query(
+            const cartasData = await queryRows(
                 `SELECT cj.idCartaJugador, cj.Rareza, j.idJugador, e.idEquipo, e.Nombre AS NombreEquipo
                  FROM CartaJugador cj
                  JOIN Jugador j ON j.idJugador = cj.Jugador_idJugador
                  JOIN Equipo e ON e.idEquipo = j.idEquipo
                  WHERE cj.idCartaJugador IN (${placeholders})`,
                 idsCartasJugador
-            );
-            const cartasData: any[] = Array.isArray(cartasRows[0]) ? cartasRows[0] : cartasRows;
+            ) as any[];
 
             // Validar límite por club
             const conteoClub: Record<number, { nombre: string; count: number }> = {};
@@ -204,22 +188,20 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            // Calcular incremento de uso por jornada anterior
-            const [jornadaAntRows]: any = await db.query(
+            const jornadaAnt = await queryOne<{ idJornada: number }>(
                 `SELECT idJornada FROM Jornada WHERE idJornada < ? ORDER BY idJornada DESC LIMIT 1`,
                 [idJornadaNum]
             );
-            const jornadaAntData = Array.isArray(jornadaAntRows[0]) ? jornadaAntRows[0] : jornadaAntRows;
-            const idJornadaAnterior: number | null = jornadaAntData[0]?.idJornada ?? null;
+            const idJornadaAnterior: number | null = jornadaAnt?.idJornada ?? null;
 
             const incrementoPorJugador: Record<number, number> = {};
             if (idJornadaAnterior !== null) {
-                const [totalMgRows]: any = await db.query(`SELECT COUNT(*) AS total FROM Manager`);
-                const totalManagers = (Array.isArray(totalMgRows[0]) ? totalMgRows[0] : totalMgRows)[0]?.total ?? 1;
+                const totalRow = await queryOne<{ total: number }>(`SELECT COUNT(*) AS total FROM Manager`);
+                const totalManagers = totalRow?.total ?? 1;
 
                 const idsJugadores = cartasData.map((c: any) => c.idJugador);
                 const placJ = idsJugadores.map(() => '?').join(',');
-                const [usosRows]: any = await db.query(
+                const usosData = await queryRows(
                     `SELECT cj.Jugador_idJugador AS idJugador, COUNT(DISTINCT p.idManager) AS numManagers
                      FROM Plantilla p
                      JOIN PlantillaJugadorObjeto pjo ON pjo.idPlantilla = p.idPlantilla
@@ -227,8 +209,7 @@ export async function POST(req: NextRequest) {
                      WHERE p.idJornada = ? AND cj.Jugador_idJugador IN (${placJ})
                      GROUP BY cj.Jugador_idJugador`,
                     [idJornadaAnterior, ...idsJugadores]
-                );
-                const usosData = Array.isArray(usosRows[0]) ? usosRows[0] : usosRows;
+                ) as any[];
                 for (const row of usosData) {
                     const pct = (row.numManagers / totalManagers) * 100;
                     incrementoPorJugador[row.idJugador] =
@@ -236,7 +217,6 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            // Calcular uso total de jugadores
             const cartaMap = new Map(cartasData.map((c: any) => [c.idCartaJugador, c]));
             let usoTotal = 0;
 
@@ -247,7 +227,6 @@ export async function POST(req: NextRequest) {
                 const inc  = incrementoPorJugador[carta.idJugador] ?? 0;
                 usoTotal += base + inc;
 
-                // Objetos equipados
                 const objetos: any[] = jugador.objetosEquipados ?? [];
                 for (const obj of objetos) {
                     if (!obj) continue;
@@ -269,30 +248,24 @@ export async function POST(req: NextRequest) {
 
         let idPlantillaActual: number;
 
-        // Paso 1: Verificar si ya existe una plantilla para esta jornada y manager
-        // Usar transacciones para asegurar la atomicidad de la operación
-        await db.query("START TRANSACTION"); // Iniciar transacción
+        await db.query("START TRANSACTION");
 
         try {
-            const [existingPlantillaResult]: any = await db.query(
+            const existingPlantilla = await queryOne<{ idPlantilla: number }>(
                 "SELECT idPlantilla FROM Plantilla WHERE idManager = ? AND idJornada = ?",
                 [managerIdNum, idJornadaNum]
             );
-            const existingPlantillaRows = Array.isArray(existingPlantillaResult[0]) ? existingPlantillaResult[0] : existingPlantillaResult;
 
-            if (existingPlantillaRows.length > 0) {
-                // Plantilla existente: Obtener su ID y limpiar entradas anteriores
-                idPlantillaActual = existingPlantillaRows[0].idPlantilla;
-                console.log(`INFO: Plantilla existente (${idPlantillaActual}) para Manager ${managerIdNum}, Jornada ${idJornadaNum}. Borrando entradas anteriores.`);
+            if (existingPlantilla) {
+                idPlantillaActual = existingPlantilla.idPlantilla;
+                // console.log(`INFO: Plantilla existente (${idPlantillaActual}) para Manager ${managerIdNum}, Jornada ${idJornadaNum}. Borrando entradas anteriores.`);
                 await db.query("DELETE FROM PlantillaJugadorObjeto WHERE idPlantilla = ?", [idPlantillaActual]);
-                // Opcional: Actualizar la alineación y puntos en la tabla Plantilla
                 await db.query(
                     "UPDATE Plantilla SET Alineacion = ?, Puntos = ? WHERE idPlantilla = ?",
                     [alineacionLabel, 0, idPlantillaActual]
                 );
             } else {
-                // Nueva plantilla: Insertar en la tabla Plantilla
-                console.log(`INFO: Creando nueva plantilla para Manager ${managerIdNum}, Jornada ${idJornadaNum}.`);
+                // console.log(`INFO: Creando nueva plantilla para Manager ${managerIdNum}, Jornada ${idJornadaNum}.`);
                 const [insertPlantillaResult]: any = await db.query(
                     "INSERT INTO Plantilla (Alineacion, Puntos, idJornada, idManager) VALUES (?, ?, ?, ?)",
                     [alineacionLabel, 0, idJornadaNum, managerIdNum]
@@ -302,10 +275,9 @@ export async function POST(req: NextRequest) {
                 if (!idPlantillaActual) {
                     throw new Error("No se pudo obtener el ID de la plantilla recién creada.");
                 }
-                console.log(`INFO: Nueva plantilla creada con ID: ${idPlantillaActual}`);
+                // console.log(`INFO: Nueva plantilla creada con ID: ${idPlantillaActual}`);
             }
 
-            // Paso 2: Insertar los jugadores y sus objetos en PlantillaJugadorObjeto
             if (jugadoresParaGuardar.length > 0) {
                 const valuesToInsert: (number | null)[][] = [];
                 for (const jugador of jugadoresParaGuardar) {
@@ -316,29 +288,22 @@ export async function POST(req: NextRequest) {
                     const ids = (jugador.objetosEquipados ?? []).map((o: any) =>
                         typeof o === 'object' ? (o.idCartaObjeto ?? null) : (o ?? null)
                     );
-                    const id1 = ids[0] ?? null;
-                    const id2 = ids[1] ?? null;
-                    const id3 = ids[2] ?? null;
-                    valuesToInsert.push([idPlantillaActual, id1, id2, id3, idCartaJugador, posicionEnPlantilla]);
+                    valuesToInsert.push([idPlantillaActual, ids[0] ?? null, ids[1] ?? null, ids[2] ?? null, idCartaJugador, posicionEnPlantilla]);
                 }
 
                 if (valuesToInsert.length > 0) {
-                    // Consulta con múltiples VALUES
                     const insertQuery = `INSERT INTO PlantillaJugadorObjeto (idPlantilla, idCartaObjeto1, idCartaObjeto2, idCartaObjeto3, idCartaJugador, posicionEnPlantilla) VALUES ?`;
-                    console.log(`DEBUG: Ejecutando inserción de ${valuesToInsert.length} filas en PlantillaJugadorObjeto.`);
-                    await db.query(insertQuery, [valuesToInsert]); // Pasar un array de arrays
-                    console.log(`INFO: ${valuesToInsert.length} entradas insertadas/actualizadas en PlantillaJugadorObjeto.`);
+                    // console.log(`DEBUG: Ejecutando inserción de ${valuesToInsert.length} filas en PlantillaJugadorObjeto.`);
+                    await db.query(insertQuery, [valuesToInsert]);
                 }
-            } else {
-                console.log(`INFO: No hay jugadores para guardar en la plantilla para Manager ${managerIdNum}, Jornada ${idJornadaNum}.`);
             }
 
-            await db.query("COMMIT"); // Confirmar transacción
+            await db.query("COMMIT");
             return NextResponse.json({ message: "Plantilla guardada exitosamente.", idPlantilla: idPlantillaActual }, { status: 200 });
 
         } catch (transactionError: any) {
-            await db.query("ROLLBACK"); // Revertir transacción en caso de error
-            throw transactionError; // Re-lanzar el error para que sea capturado por el catch externo
+            await db.query("ROLLBACK");
+            throw transactionError;
         }
 
     } catch (error: any) {

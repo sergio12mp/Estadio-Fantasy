@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { abrirSobre, getProbabilidades, PACK_COSTS, PackType } from '@/lib/packs';
 import { db } from '@/lib/mysql';
+import { queryOne } from '@/lib/db-utils';
 
 async function getPity(managerId: number): Promise<number> {
-  const [rows] = await db.query('SELECT pity FROM Manager WHERE idManager = ?', [managerId]);
-  if (Array.isArray(rows) && rows.length > 0) return (rows as any[])[0].pity ?? 0;
-  return 0;
+  const row = await queryOne<{ pity: number }>('SELECT pity FROM Manager WHERE idManager = ?', [managerId]);
+  return row?.pity ?? 0;
 }
 
 async function getEconomia(managerId: number): Promise<{ oro: number; balones: number } | null> {
-  const [rows] = await db.query('SELECT oro, balones FROM Manager WHERE idManager = ?', [managerId]);
-  if (Array.isArray(rows) && rows.length > 0) {
-    const { oro, balones } = (rows as any[])[0];
-    return { oro, balones };
-  }
-  return null;
+  return queryOne<{ oro: number; balones: number }>(
+    'SELECT oro, balones FROM Manager WHERE idManager = ?',
+    [managerId]
+  );
 }
 
 export async function GET(req: NextRequest) {
@@ -60,12 +58,11 @@ export async function POST(req: NextRequest) {
           [carta.idDB, managerId, carta.rareza]
         );
       } else {
-        // Usar la rareza fija del objeto en la tabla Objetos, no la aleatoria del sobre
-        const [objRows]: any = await db.query(
+        const objRow = await queryOne<{ Rareza: string }>(
           'SELECT Rareza FROM Objetos WHERE idObjetos = ?',
           [carta.idDB]
         );
-        const rarezaObjeto = objRows?.[0]?.Rareza ?? carta.rareza;
+        const rarezaObjeto = objRow?.Rareza ?? carta.rareza;
         await db.query(
           'INSERT INTO CartaObjeto (idObjetos, idManager, Rareza) VALUES (?, ?, ?)',
           [carta.idDB, managerId, rarezaObjeto]

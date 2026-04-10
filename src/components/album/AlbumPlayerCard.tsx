@@ -4,28 +4,14 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Carta } from '@/app/album/page';
+import { RAREZA_CONFIG, RAREZA_STARS } from '@/lib/rareza-config';
+import { valorVentaJugador } from '@/lib/rewards';
+import RarityBadge from '@/components/ui/RarityBadge';
 
 interface AlbumPlayerCardProps {
     carta: Carta;
     onDelete: (carta: Carta) => void;
 }
-
-const RAREZA_CONFIG: Record<string, {
-    gradient: string;
-    border: string;
-    badge: string;
-    avatarBorder: string;
-    starColor: string;
-}> = {
-    'Común':      { gradient: 'from-slate-500 via-slate-600 to-slate-700',    border: 'border-slate-300',  badge: 'bg-slate-100 text-slate-600',   avatarBorder: 'border-slate-300',  starColor: 'text-slate-300'  },
-    'Raro':       { gradient: 'from-blue-500 via-blue-600 to-blue-800',        border: 'border-blue-400',   badge: 'bg-blue-100 text-blue-700',     avatarBorder: 'border-blue-200',   starColor: 'text-blue-200'   },
-    'Épico':      { gradient: 'from-purple-600 via-purple-700 to-purple-900',  border: 'border-purple-500', badge: 'bg-purple-100 text-purple-700', avatarBorder: 'border-purple-200', starColor: 'text-purple-200' },
-    'Legendario': { gradient: 'from-yellow-400 via-amber-500 to-orange-600',   border: 'border-yellow-400', badge: 'bg-yellow-100 text-yellow-700', avatarBorder: 'border-yellow-200', starColor: 'text-yellow-200' },
-};
-
-const RAREZA_STARS: Record<string, string> = {
-    'Común': '★', 'Raro': '★★', 'Épico': '★★★', 'Legendario': '★★★★',
-};
 
 export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProps) {
     const [showModal, setShowModal] = useState(false);
@@ -44,7 +30,7 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
         ? `https://res.cloudinary.com/${cloudName}/image/upload/w_80,h_80,c_fill,f_auto,q_auto/estadio-fantasy/jugadores/${carta.jugadorId}.jpg`
         : `/images/jugadores/${carta.jugadorId}.jpg`;
     const isComun = carta.Rareza === 'Común';
-    const valorVenta = isComun ? 3 : ({ 'Raro': 10, 'Épico': 20, 'Legendario': 40 }[carta.Rareza] ?? 0);
+    const valorVenta = valorVentaJugador(carta.Rareza);
 
     return (
         <>
@@ -83,9 +69,7 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
                     <p className="text-xs text-gray-400 text-center mb-1 truncate">{carta.NombreEquipo}</p>
 
                     <div className="flex justify-center mb-2">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.badge}`}>
-                            {carta.Rareza}
-                        </span>
+                        <RarityBadge rareza={carta.Rareza} />
                     </div>
 
                     <div className="text-center mb-2">
@@ -142,9 +126,7 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
                             </div>
                             <h2 className="text-white font-bold text-lg text-center">{carta.Nombre}</h2>
                             <p className="text-white/70 text-sm">{carta.NombreEquipo}</p>
-                            <span className={`text-xs font-semibold mt-1 px-3 py-0.5 rounded-full ${config.badge}`}>
-                                {carta.Rareza} {stars}
-                            </span>
+                            <RarityBadge rareza={carta.Rareza} showStars className="mt-1 px-3" />
                         </div>
 
                         {/* Modal body */}

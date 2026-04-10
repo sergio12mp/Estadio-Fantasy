@@ -10,10 +10,10 @@ export async function GET() {
     try {
         const [result] = await db.query("SELECT * FROM Ligas") as [Ligas[], any];
         if (!result.length) {
-            console.log("No se encontraron ligas");
+            // console.log("No se encontraron ligas");
             return NextResponse.json({ message: "No se encontraron ligas" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Ligas encontradas", result });
     } catch (error) {
         console.error("Error al obtener las ligas:", error);
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
         const result = await db.query("INSERT INTO Ligas (Nombre) VALUES (?)", [Nombre]) as any;
 
-        console.log("Liga insertada:", result);
+        // console.log("Liga insertada:", result);
         return NextResponse.json({ message: "Liga insertada exitosamente", result }, { status: 201 });
     } catch (error) {
         console.error("Error insertando liga:", error);

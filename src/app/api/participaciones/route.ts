@@ -12,10 +12,10 @@ export async function GET() {
     try {
         const [result] = await db.query("SELECT * FROM Manager_Ligas") as [Participaciones[], any];
         if (!result.length) {
-            console.log("No se encontraron participaciones");
+            // console.log("No se encontraron participaciones");
             return NextResponse.json({ message: "No se encontraron participaciones" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Participaciones encontradas", result });
     } catch (error) {
         console.error("Error al obtener las participaciones:", error);
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
         const [result] = await db.query("INSERT INTO Manager_Ligas (idManager, idLigas) VALUES (?, ?)", [idManager, idLigas]) as [any, any];
 
-        console.log("Participación insertada:", result);
+        // console.log("Participación insertada:", result);
         return NextResponse.json({ message: "Participación insertada exitosamente", result }, { status: 201 });
     } catch (error) {
         console.error("Error insertando participación:", error);

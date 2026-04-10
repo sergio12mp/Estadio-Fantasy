@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
         // 3. Generar un código único para unirse a la liga
         const codigo = uuidv4();
-        console.log(`INFO: Creando liga "${nombreLiga}" con código de unión: ${codigo}`);
+        // console.log(`INFO: Creando liga "${nombreLiga}" con código de unión: ${codigo}`);
 
         // 4. Insertar la nueva liga
         const insertLigaQuery = `
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         // 6. Confirmar la transacción
         await connection.commit();
 
-        console.log(`INFO: Liga "${nombreLiga}" creada con éxito por el manager ID: ${managerIdNum}`);
+        // console.log(`INFO: Liga "${nombreLiga}" creada con éxito por el manager ID: ${managerIdNum}`);
 
         return NextResponse.json({
             message: "Liga creada con éxito",

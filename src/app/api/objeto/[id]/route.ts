@@ -11,10 +11,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     try {
         const [result] = await db.query("SELECT * FROM Objetos WHERE idObjeto = ?", [params.id]) as [Objeto[], any];
         if (!result.length) {
-            console.log(`No se encontró el objeto con ID ${params.id}`);
+            // console.log(`No se encontró el objeto con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró el objeto" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Objeto encontrado", result });
     } catch (error) {
         console.error("Error al obtener el objeto:", error);
@@ -36,7 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "No se encontró el objeto para actualizar" }, { status: 404 });
         }
 
-        console.log("Objeto actualizado:", result);
+        // console.log("Objeto actualizado:", result);
         return NextResponse.json({ message: "Objeto actualizado exitosamente", result });
     } catch (error) {
         console.error("Error actualizando objeto:", error);
@@ -52,7 +52,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ message: "No se encontró el objeto para eliminar" }, { status: 404 });
         }
 
-        console.log("Objeto eliminado:", result);
+        // console.log("Objeto eliminado:", result);
         return NextResponse.json({ message: "Objeto eliminado exitosamente", result });
     } catch (error) {
         console.error("Error eliminando objeto:", error);

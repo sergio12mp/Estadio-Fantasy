@@ -14,25 +14,6 @@ interface Carta extends Partial<CartaJugadorManager>, Partial<CartaObjetoManager
     cantidad?: number;
 }
 
-// Lógica de recompensa
-function reward(rareza: string): number {
-    switch (rareza) {
-        case 'Común':
-        case 'Comun':
-            return 5;
-        case 'Raro':
-        case 'Rara':
-            return 10;
-        case 'Épico':
-        case 'Epico':
-            return 15;
-        case 'Legendario':
-        case 'Legendario':
-            return 20;
-        default:
-            return 0;
-    }
-}
 
 export default function AlbumClientComponent({ managerId }: { managerId: number }) {
     const { currency, setCurrency } = useAuth();

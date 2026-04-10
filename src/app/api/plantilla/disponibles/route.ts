@@ -1,7 +1,7 @@
 // GET /api/plantilla/disponibles?managerId=X
 // Devuelve las jornadas en las que un manager tiene plantilla guardada
-import { db } from "@/lib/mysql";
 import { NextRequest, NextResponse } from "next/server";
+import { queryRows } from "@/lib/db-utils";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const [rows]: any = await db.query(
+        const jornadas = await queryRows(
             `SELECT p.idJornada, j.Nombre
              FROM Plantilla p
              JOIN Jornada j ON p.idJornada = j.idJornada
@@ -20,8 +20,6 @@ export async function GET(req: NextRequest) {
              ORDER BY p.idJornada DESC`,
             [Number(managerId)]
         );
-
-        const jornadas = Array.isArray(rows[0]) ? rows[0] : rows;
         return NextResponse.json({ jornadas });
     } catch (error: any) {
         console.error("Error al obtener jornadas disponibles:", error);

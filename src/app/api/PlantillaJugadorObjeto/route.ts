@@ -12,10 +12,10 @@ export async function GET() {
     try {
         const [result] = await db.query("SELECT * FROM PlantillaJugadorObjeto") as [PlantillaJugadorObjeto[], any];
         if (!result.length) {
-            console.log("No se encontraron relaciones Plantilla-Jugador-Objeto");
+            // console.log("No se encontraron relaciones Plantilla-Jugador-Objeto");
             return NextResponse.json({ message: "No se encontraron relaciones Plantilla-Jugador-Objeto" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Relaciones Plantilla-Jugador-Objeto encontradas", result });
     } catch (error) {
         console.error("Error al obtener las relaciones Plantilla-Jugador-Objeto:", error);
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
         const [result] = await db.query("INSERT INTO PlantillaJugadorObjeto (idPlantilla, idJugador, idObjetos) VALUES (?, ?, ?)", [idPlantilla, idJugador, idObjetos]) as [any, any];
 
-        console.log("Relación Plantilla-Jugador-Objeto insertada:", result);
+        // console.log("Relación Plantilla-Jugador-Objeto insertada:", result);
         return NextResponse.json({ message: "Relación Plantilla-Jugador-Objeto insertada exitosamente", result }, { status: 201 });
     } catch (error) {
         console.error("Error insertando relación Plantilla-Jugador-Objeto:", error);

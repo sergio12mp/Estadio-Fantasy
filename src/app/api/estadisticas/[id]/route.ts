@@ -39,10 +39,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     try {
         const [result] = await db.query("SELECT * FROM Estadisticas WHERE idEstadisticas = ?", [params.id]) as [Estadisticas[], any];
         if (!result.length) {
-            console.log(`No se encontró la estadística con ID ${params.id}`);
+            // console.log(`No se encontró la estadística con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la estadística" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Estadística encontrada", result });
     } catch (error) {
         console.error("Error al obtener la estadística:", error);
@@ -91,7 +91,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "No se encontró la estadística para actualizar" }, { status: 404 });
         }
 
-        console.log("Estadística actualizada:", result);
+        // console.log("Estadística actualizada:", result);
         return NextResponse.json({ message: "Estadística actualizada exitosamente", result });
     } catch (error) {
         console.error("Error actualizando estadística:", error);
@@ -107,7 +107,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ message: "No se encontró la estadística para eliminar" }, { status: 404 });
         }
 
-        console.log("Estadística eliminada:", result);
+        // console.log("Estadística eliminada:", result);
         return NextResponse.json({ message: "Estadística eliminada exitosamente", result });
     } catch (error) {
         console.error("Error eliminando estadística:", error);

@@ -3,9 +3,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import RequireAuth from '@/components/RequireAuth';
+import RequireAuth from '@/components/ui/RequireAuth';
 import { useAuth } from '@/context/auth-context';
-import Toast from '@/components/Toast';
+import Toast from '@/components/ui/Toast';
 
 type Liga = {
     idLigas: number;

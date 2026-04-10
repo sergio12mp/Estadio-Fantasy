@@ -1,7 +1,8 @@
 // app/api/manager/route.ts
 import { db } from "@/lib/mysql";
+import { queryRows } from "@/lib/db-utils";
 import { NextRequest, NextResponse } from "next/server";
-import { fillCommonCardsForManager } from "@/lib/card-utils"; // <-- ¡Nueva importación!
+import { fillCommonCardsForManager } from "@/lib/card-utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,13 +11,11 @@ export async function GET(req: NextRequest) {
 
     // Sin parámetros → devolver lista de todos los managers (para admin)
     if (!idGoogle) {
-      const queryResult: any = await db.query("SELECT idManager, Nombre, Email FROM Manager ORDER BY idManager");
-      const managers: any[] = Array.isArray(queryResult[0]) ? queryResult[0] : queryResult;
+      const managers = await queryRows("SELECT idManager, Nombre, Email FROM Manager ORDER BY idManager");
       return NextResponse.json({ managers });
     }
 
-    const queryResult: any = await db.query("SELECT * FROM Manager WHERE idGoogle = ?", [idGoogle]);
-    const managerRows: any[] = Array.isArray(queryResult[0]) ? queryResult[0] : queryResult;
+    const managerRows = await queryRows("SELECT * FROM Manager WHERE idGoogle = ?", [idGoogle]);
 
     if (managerRows.length === 0) {
       return NextResponse.json({ found: false }, { status: 404 });
@@ -38,22 +37,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Paso 1: Verificar si el manager ya existe (para evitar duplicados al registrarse)
-    const existingRowsQueryResult: any = await db.query(
+    const existingRows = await queryRows<{ idManager: number }>(
       "SELECT idManager FROM Manager WHERE idGoogle = ?",
       [idGoogle]
     );
-    // Extracción robusta de las filas de resultados
-    const existingRows = Array.isArray(existingRowsQueryResult[0]) ? existingRowsQueryResult[0] : existingRowsQueryResult;
-
 
     if (existingRows && existingRows.length > 0) {
       const existingManagerId = existingRows[0].idManager;
-      console.log(`INFO: Manager con idGoogle ${idGoogle} ya existe. ID: ${existingManagerId}.`);
+      // console.log(`INFO: Manager con idGoogle ${idGoogle} ya existe. ID: ${existingManagerId}.`);
       return NextResponse.json({ created: false, id: existingManagerId });
     }
 
     // Paso 2: Si el manager NO existe, insertarlo en la base de datos
-    console.log(`INFO: Creando nuevo manager para idGoogle: ${idGoogle}`);
+    // console.log(`INFO: Creando nuevo manager para idGoogle: ${idGoogle}`);
     // Extracción robusta del resultado de la inserción (contiene insertId)
     const insertResult: any = await db.query(
       "INSERT INTO Manager (nombre, Email, idGoogle, oro, balones) VALUES (?, ?, ?, 0, 0)",
@@ -68,12 +64,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Error al crear el manager, no se obtuvo el ID." }, { status: 500 });
     }
 
-    console.log(`INFO: Manager '${name}' (idGoogle: '${idGoogle}') creado exitosamente con ID: ${newManagerId}`);
+    // console.log(`INFO: Manager '${name}' (idGoogle: '${idGoogle}') creado exitosamente con ID: ${newManagerId}`);
 
     // Paso 3: ¡Llamar a la función para dar cartas comunes al nuevo manager!
     try {
       const cardsCreated = await fillCommonCardsForManager(newManagerId);
-      console.log(`INFO: Se crearon ${cardsCreated} cartas comunes para el nuevo manager ID: ${newManagerId}`);
+      // console.log(`INFO: Se crearon ${cardsCreated} cartas comunes para el nuevo manager ID: ${newManagerId}`);
     } catch (cardError: any) {
       console.error(`❌ ERROR: Fallo al crear cartas comunes para el manager ${newManagerId}:`, cardError);
       // Considera si quieres que este error impida la creación del manager

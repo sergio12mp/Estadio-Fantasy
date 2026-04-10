@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import SignOutButton from "./SignOutButton";
-import LoginButton from "./LoginButton";
+import AuthButton from "@/components/ui/AuthButton";
 import { useState, useEffect } from "react";
 
 const NAV_LINKS = [
@@ -105,10 +104,10 @@ export default function NavBar() {
               >
                 {user.name?.split(" ")[0]}
               </Link>
-              <SignOutButton />
+              <AuthButton variant="signOut" />
             </>
           ) : (
-            <LoginButton />
+            <AuthButton variant="signIn" />
           )}
 
           {/* Hamburger (mobile only) */}

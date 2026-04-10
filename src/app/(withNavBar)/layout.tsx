@@ -1,7 +1,7 @@
 //withNavBar/layout.tsx
 //import "bootstrap/dist/css/bootstrap.min.css";
-import { Providers } from "@/components/providers";
-import { SelectNavbar } from "@/components/selectNavbar";
+import { Providers } from "@/components/layout/providers";
+import { SelectNavbar } from "@/components/layout/selectNavbar";
 
 
 export default function RootLayout({

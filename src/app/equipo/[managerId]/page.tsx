@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import RequireAuth from '@/components/RequireAuth';
-import PlayerCard from '@/components/playerCard';
+import RequireAuth from '@/components/ui/RequireAuth';
+import PlayerCard from '@/components/team/playerCard';
 import {
   CartaJugadorEnPlantilla,
   getPosicionFrontend,

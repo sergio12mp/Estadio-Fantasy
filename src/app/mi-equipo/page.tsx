@@ -2,35 +2,13 @@
 'use client';
 
 import { useAuth } from '@/context/auth-context';
-import RequireAuth from '@/components/RequireAuth';
+import RequireAuth from '@/components/ui/RequireAuth';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-
-const COSTE_BASE_FE: Record<string, number> = {
-  'Común': 1, 'Comun': 1,
-  'Raro': 2, 'Rara': 2,
-  'Épico': 3, 'Epico': 3, 'Épica': 3, 'Epica': 3,
-  'Legendario': 4, 'Legendaria': 4,
-};
-
-const RAREZA_MAP: Record<string, 'Común' | 'Raro' | 'Épico' | 'Legendario'> = {
-  'comun': 'Común', 'común': 'Común',
-  'raro': 'Raro', 'rara': 'Raro',
-  'epico': 'Épico', 'epica': 'Épico', 'épico': 'Épico', 'épica': 'Épico',
-  'legendario': 'Legendario', 'legendaria': 'Legendario',
-};
-
-function normalizeRareza(r: string): 'Común' | 'Raro' | 'Épico' | 'Legendario' {
-  if (!r) return 'Común';
-  const key = r.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  return RAREZA_MAP[key] ?? 'Común';
-}
-import PlayerCard from '@/components/playerCard';
-import PlayerSelectionModal from '@/components/playerSelectionModal';
-import ObjectSelectionModal from '@/components/objectSelectionModal';
+import PlayerCard from '@/components/team/playerCard';
+import PlayerSelectionModal from '@/components/team/playerSelectionModal';
+import ObjectSelectionModal from '@/components/team/objectSelectionModal';
 import { useRouter } from 'next/navigation';
-import Toast from '@/components/Toast';
-
-// Asegúrate de que estas interfaces y funciones estén en '@/lib/data'
+import Toast from '@/components/ui/Toast';
 import {
   CartaJugadorManager,
   CartaObjetoManager,
@@ -41,52 +19,10 @@ import {
   obtenerSlotsObjetoPorRareza,
   PosicionDB,
 } from '@/lib/data';
-
-// --- NUEVAS INTERFACES PARA LA FORMACIÓN ---
-interface Formacion {
-  label: string;
-  positions: { [key in PosicionFrontend]: number };
-  order: PosicionFrontend[];
-}
-
-// --- DEFINICIONES DE FORMACIONES (pueden venir de DB a futuro) ---
-const FORMACIONES: Formacion[] = [
-  {
-    label: '5-4-1',
-    positions: { 'POR': 1, 'DEF': 5, 'MED': 4, 'DEL': 1 },
-    order: ['POR', 'DEF', 'MED', 'DEL'],
-  },
-  {
-    label: '5-3-2',
-    positions: { 'POR': 1, 'DEF': 5, 'MED': 3, 'DEL': 2 },
-    order: ['POR', 'DEF', 'MED', 'DEL'],
-  },
-  {
-    label: '4-5-1',
-    positions: { 'POR': 1, 'DEF': 4, 'MED': 5, 'DEL': 1 },
-    order: ['POR', 'DEF', 'MED', 'DEL'],
-  },
-  {
-    label: '4-4-2',
-    positions: { 'POR': 1, 'DEF': 4, 'MED': 4, 'DEL': 2 },
-    order: ['POR', 'DEF', 'MED', 'DEL'],
-  },
-  {
-    label: '4-3-3',
-    positions: { 'POR': 1, 'DEF': 4, 'MED': 3, 'DEL': 3 },
-    order: ['POR', 'DEF', 'MED', 'DEL'],
-  },
-  {
-    label: '3-5-2',
-    positions: { 'POR': 1, 'DEF': 3, 'MED': 5, 'DEL': 2 },
-    order: ['POR', 'DEF', 'MED', 'DEL'],
-  },
-  {
-    label: '3-4-3',
-    positions: { 'POR': 1, 'DEF': 3, 'MED': 4, 'DEL': 3 },
-    order: ['POR', 'DEF', 'MED', 'DEL'],
-  },
-];
+import { FORMACIONES } from '@/lib/formations';
+import type { Formacion } from '@/lib/formations';
+import { normalizeRareza } from '@/lib/rareza-utils';
+import { COSTE_BASE_USO, TEAM_LIMITS_DEFAULT } from '@/lib/constants';
 
 export default function MiEquipo() {
   const { manager, loading: authLoading } = useAuth();
@@ -122,8 +58,8 @@ export default function MiEquipo() {
   const [selectedJornada, setSelectedJornada] = useState<number | null>(null);
 
   const [costes, setCostes] = useState<Record<number, { costeBase: number; incremento: number; costeTotal: number }>>({});
-  const [limiteUso, setLimiteUso] = useState(100);
-  const [limiteClub, setLimiteClub] = useState(4);
+  const [limiteUso, setLimiteUso] = useState(TEAM_LIMITS_DEFAULT.LIMITE_USO);
+  const [limiteClub, setLimiteClub] = useState(TEAM_LIMITS_DEFAULT.MAX_JUGADORES_POR_CLUB);
 
   const isEditingAllowed =
     selectedJornada !== null && selectedJornada === idJornadaActual;
@@ -150,23 +86,23 @@ export default function MiEquipo() {
 
       try {
         // 1. Obtener cartas de jugador del manager
-        console.log(`Fetching player cards for manager: ${manager.idManager}`);
+        // console.log(`Fetching player cards for manager: ${manager.idManager}`);
         const playerRes = await fetch(`/api/cartas-manager?managerId=${manager.idManager}`);
         const playerData = await playerRes.json();
         if (!playerRes.ok) {
           throw new Error(`Error al obtener cartas de jugador: ${playerData.error || playerRes.statusText}`);
         }
-        console.log("Player data fetched:", playerData);
+        // console.log("Player data fetched:", playerData);
         setCartasJugadorManagerDB(playerData.cartasJugador || []);
 
         // 2. Obtener objetos del manager
-        console.log(`Fetching object cards for manager: ${manager.idManager}`);
+        // console.log(`Fetching object cards for manager: ${manager.idManager}`);
         const objectRes = await fetch(`/api/cartas-manager/objetos?managerId=${manager.idManager}`);
         const objectData = await objectRes.json();
         if (!objectRes.ok) {
           throw new Error(`Error al obtener objetos: ${objectData.error || objectRes.statusText}`);
         }
-        console.log("Object data fetched:", objectData);
+        // console.log("Object data fetched:", objectData);
         setCartasObjetoManagerDB(objectData.cartasObjeto || []);
 
         // 3. Obtener la última jornada
@@ -175,7 +111,7 @@ export default function MiEquipo() {
         if (!jornadaRes.ok) {
           throw new Error(`Error al obtener la última jornada: ${jornadaData.error || jornadaRes.statusText}`);
         }
-        console.log("Last jornada fetched:", jornadaData);
+        // console.log("Last jornada fetched:", jornadaData);
         setIdJornadaActual(jornadaData.idJornada);
 
       } catch (err: any) {
@@ -282,9 +218,9 @@ export default function MiEquipo() {
     let total = 0;
     plantillaActual.forEach(player => {
       const info = costes[player.idJugador];
-      total += info?.costeTotal ?? (COSTE_BASE_FE[player.Rareza] ?? 1);
+      total += info?.costeTotal ?? (COSTE_BASE_USO[player.Rareza] ?? 1);
       for (const obj of player.objetosEquipados) {
-        total += COSTE_BASE_FE[obj.Rareza] ?? 1;
+        total += COSTE_BASE_USO[obj.Rareza] ?? 1;
       }
     });
     return total;
@@ -446,7 +382,7 @@ export default function MiEquipo() {
         objetosEquipados: player.objetosEquipados.map(obj => obj.idCartaObjeto),
       }));
 
-      console.log("Enviando plantilla para guardar:", {
+      // console.log("Enviando plantilla para guardar:", {
         managerId: manager.idManager,
         jugadoresParaGuardar: plantillaParaGuardar,
         alineacionLabel: selectedFormationLabel,
@@ -475,7 +411,7 @@ export default function MiEquipo() {
       }
 
       const result = await response.json();
-      console.log("Plantilla guardada exitosamente:", result);
+      // console.log("Plantilla guardada exitosamente:", result);
       setToast({ message: "¡Plantilla guardada correctamente!", type: 'success' });
     } catch (error: any) {
       console.error("Error al guardar la plantilla:", error.message);
@@ -519,7 +455,7 @@ export default function MiEquipo() {
                                 }}
                             />
                             <div className="mt-0.5 text-[10px] text-white/70 text-center">
-                              Uso: {costes[currentPlayer.idJugador]?.costeTotal ?? (COSTE_BASE_FE[currentPlayer.Rareza] ?? 1)}
+                              Uso: {costes[currentPlayer.idJugador]?.costeTotal ?? (COSTE_BASE_USO[currentPlayer.Rareza] ?? 1)}
                             </div>
                             </>
                         ) : (

@@ -12,10 +12,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     try {
         const [result] = await db.query("SELECT * FROM Partido WHERE idPartido = ?", [params.id]) as [Partido[], any];
         if (!result.length) {
-            console.log(`No se encontró el partido con ID ${params.id}`);
+            // console.log(`No se encontró el partido con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró el partido" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Partido encontrado", result });
     } catch (error) {
         console.error("Error al obtener el partido:", error);
@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "No se encontró el partido para actualizar" }, { status: 404 });
         }
 
-        console.log("Partido actualizado:", result);
+        // console.log("Partido actualizado:", result);
         return NextResponse.json({ message: "Partido actualizado exitosamente", result });
     } catch (error) {
         console.error("Error actualizando partido:", error);
@@ -53,7 +53,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ message: "No se encontró el partido para eliminar" }, { status: 404 });
         }
 
-        console.log("Partido eliminado:", result);
+        // console.log("Partido eliminado:", result);
         return NextResponse.json({ message: "Partido eliminado exitosamente", result });
     } catch (error) {
         console.error("Error eliminando partido:", error);

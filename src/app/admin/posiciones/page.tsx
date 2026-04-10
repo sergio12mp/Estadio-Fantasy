@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import RequireAuth from '@/components/RequireAuth';
+import RequireAuth from '@/components/ui/RequireAuth';
 
 type PosicionFrontend = 'POR' | 'DEF' | 'MED' | 'DEL';
 

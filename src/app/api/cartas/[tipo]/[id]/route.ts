@@ -1,26 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mysql';
+import { queryOne } from '@/lib/db-utils';
 import { revalidatePath } from 'next/cache';
-
-function reward(rareza: string): number {
-  switch (rareza) {
-    case 'Comun':
-    case 'Común':
-      return 3;
-    case 'Raro':
-    case 'Rara':
-      return 10;
-    case 'Epico':
-    case 'Épico':
-    case 'Epica':
-      return 20;
-    case 'Legendario':
-    case 'Legendaria':
-      return 40;
-    default:
-      return 0;
-  }
-}
+import { rewardJugador, rewardObjeto } from '@/lib/rewards';
 
 export async function DELETE(req: NextRequest, { params }: { params: { tipo: string; id: string } }) {
   try {
@@ -31,34 +13,34 @@ export async function DELETE(req: NextRequest, { params }: { params: { tipo: str
     }
 
     if (params.tipo === 'jugador') {
-      const [rows]: any = await db.query(
+      revalidatePath('/album');
+      const carta = await queryOne<{ rareza: string }>(
         'SELECT rareza FROM CartaJugador WHERE idCartaJugador = ? AND Manager_idManager = ?',
         [id, managerId]
       );
-      revalidatePath('/album');//Refrescar cache del álbum
-      const r = Array.isArray(rows) ? rows[0] : rows;
-      if (!r) return NextResponse.json({ error: 'Carta no encontrada' }, { status: 404 });
-      const rareza = r.rareza ?? r.Rareza;
+      if (!carta) return NextResponse.json({ error: 'Carta no encontrada' }, { status: 404 });
+      const rareza = carta.rareza;
       if (rareza === 'Comun' || rareza === 'Común') {
         return NextResponse.json({ error: 'No se pueden eliminar cartas comunes de jugador' }, { status: 400 });
       }
       await db.query('DELETE FROM CartaJugador WHERE idCartaJugador = ? AND Manager_idManager = ?', [id, managerId]);
-      const balGanados = reward(rareza);
+      const balGanados = rewardJugador(rareza);
       await db.query('UPDATE Manager SET balones = balones + ? WHERE idManager = ?', [balGanados, managerId]);
       revalidatePath('/album');
       return NextResponse.json({ balonesGanados: balGanados });
+
     } else if (params.tipo === 'objeto') {
-      const [rows]: any = await db.query(
+      const carta = await queryOne<{ rareza: string }>(
         'SELECT rareza FROM CartaObjeto WHERE idCartaObjeto = ? AND idManager = ?',
         [id, managerId]
       );
-      const r = Array.isArray(rows) ? rows[0] : rows;
-      if (!r) return NextResponse.json({ error: 'Carta no encontrada' }, { status: 404 });
-      const rareza = r.rareza ?? r.Rareza;
+      if (!carta) return NextResponse.json({ error: 'Carta no encontrada' }, { status: 404 });
+      const rareza = carta.rareza;
       await db.query('DELETE FROM CartaObjeto WHERE idCartaObjeto = ? AND idManager = ?', [id, managerId]);
-      const balGanados = reward(rareza);
+      const balGanados = rewardObjeto(rareza);
       await db.query('UPDATE Manager SET balones = balones + ? WHERE idManager = ?', [balGanados, managerId]);
       return NextResponse.json({ balonesGanados: balGanados });
+
     } else {
       return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 });
     }

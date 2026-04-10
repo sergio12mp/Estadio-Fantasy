@@ -13,10 +13,10 @@ export async function GET() {
     try {
         const [result] = await db.query("SELECT * FROM Objetos") as [Objetos[], any];
         if (!result.length) {
-            console.log("No se encontraron objetos");
+            // console.log("No se encontraron objetos");
             return NextResponse.json({ message: "No se encontraron objetos" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Objetos encontrados", result });
     } catch (error) {
         console.error("Error al obtener los objetos:", error);
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
         const [result] = await db.query("INSERT INTO Objetos (Nombre, Precio, Descripcion) VALUES (?, ?, ?)", [Nombre, Precio, Descripcion]) as [any, any];
 
-        console.log("Objeto insertado:", result);
+        // console.log("Objeto insertado:", result);
         return NextResponse.json({ message: "Objeto insertado exitosamente", result }, { status: 201 });
     } catch (error) {
         console.error("Error insertando objeto:", error);

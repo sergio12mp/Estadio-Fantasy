@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         await connection.query(insertQuery, [managerIdNum, ligaId]);
         await connection.commit();
 
-        console.log(`INFO: Manager con ID ${managerIdNum} se ha unido a la liga con ID ${ligaId}.`);
+        // console.log(`INFO: Manager con ID ${managerIdNum} se ha unido a la liga con ID ${ligaId}.`);
 
         return NextResponse.json({ 
             message: "Te has unido a la liga con éxito.",

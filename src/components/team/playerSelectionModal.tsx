@@ -1,7 +1,7 @@
 // components/PlayerSelectionModal.tsx
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   CartaJugadorManager,
   CartaObjetoManager,
@@ -9,6 +9,15 @@ import {
   obtenerSlotsObjetoPorRareza,
   getPosicionFrontend,
 } from '@/lib/data';
+import {
+  RAREZA_BADGE,
+  RAREZA_GRADIENT,
+  RAREZA_BORDER,
+  RAREZA_STARS,
+  RAREZA_ORDEN,
+  RAREZA_OBJETO_BG,
+} from '@/lib/rareza-config';
+import { normalizeRareza } from '@/lib/rareza-utils';
 
 interface PlayerSelectionModalProps {
   position: PosicionFrontend;
@@ -21,54 +30,6 @@ interface PlayerSelectionModalProps {
 }
 
 const RAREZAS = ['Común', 'Raro', 'Épico', 'Legendario'];
-
-const RAREZA_BADGE: Record<string, string> = {
-  'Común':      'bg-slate-200 text-slate-700 border-slate-400',
-  'Raro':       'bg-blue-100 text-blue-700 border-blue-400',
-  'Épico':      'bg-purple-100 text-purple-700 border-purple-400',
-  'Legendario': 'bg-yellow-100 text-yellow-700 border-yellow-400',
-};
-
-const RAREZA_GRADIENT: Record<string, string> = {
-  'Común':      'from-slate-500 via-slate-600 to-slate-700',
-  'Raro':       'from-blue-500 via-blue-600 to-blue-800',
-  'Épico':      'from-purple-600 via-purple-700 to-purple-900',
-  'Legendario': 'from-yellow-400 via-amber-500 to-orange-600',
-};
-
-const RAREZA_BORDER: Record<string, string> = {
-  'Común':      'border-slate-300',
-  'Raro':       'border-blue-400',
-  'Épico':      'border-purple-500',
-  'Legendario': 'border-yellow-400',
-};
-
-const RAREZA_STARS: Record<string, string> = {
-  'Común': '★', 'Raro': '★★', 'Épico': '★★★', 'Legendario': '★★★★',
-};
-
-const RAREZA_ORDEN: Record<string, number> = {
-  'Común': 0, 'Raro': 1, 'Épico': 2, 'Legendario': 3,
-};
-
-const OBJETO_RAREZA_COLORS: Record<string, string> = {
-  'Común':      'border-slate-300 bg-slate-50',
-  'Raro':       'border-blue-400 bg-blue-50',
-  'Épico':      'border-purple-500 bg-purple-50',
-  'Legendario': 'border-yellow-500 bg-yellow-50',
-};
-
-const normalizeRareza = (r: string): string => {
-  if (!r) return 'Común';
-  const map: Record<string, string> = {
-    'comun': 'Común', 'común': 'Común',
-    'raro': 'Raro', 'rara': 'Raro',
-    'epico': 'Épico', 'epica': 'Épico', 'épico': 'Épico', 'épica': 'Épico',
-    'legendario': 'Legendario', 'legendaria': 'Legendario',
-  };
-  const key = r.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  return map[key] ?? r;
-};
 
 const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
   position,
@@ -123,11 +84,11 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
     return ['todos', ...Array.from(new Set(equipos)).sort()];
   }, [jugadoresPosicion]);
 
-  const toggleRareza = (rareza: string) => {
+  const toggleRareza = useCallback((rareza: string) => {
     setFiltroRareza(prev =>
       prev.includes(rareza) ? prev.filter(r => r !== rareza) : [...prev, rareza]
     );
-  };
+  }, []);
 
   const jugadoresFiltrados = useMemo(() => {
     let list = jugadoresPosicion;
@@ -161,20 +122,20 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
     : 'Común';
   const maxSlots = selectedPlayer ? obtenerSlotsObjetoPorRareza(rarezaNorm) : 0;
 
-  const handlePlayerClick = (player: CartaJugadorManager) => {
+  const handlePlayerClick = useCallback((player: CartaJugadorManager) => {
     const rNorm = normalizeRareza(player.Rareza) as 'Común' | 'Raro' | 'Épico' | 'Legendario';
     const slots = obtenerSlotsObjetoPorRareza(rNorm);
     setSelectedPlayer(player);
     setEquippedObjects(Array(slots).fill(null));
     setStep('configure');
-  };
+  }, []);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     if (!selectedPlayer) return;
     onConfirm(selectedPlayer, equippedObjects.filter(Boolean) as CartaObjetoManager[]);
-  };
+  }, [selectedPlayer, equippedObjects, onConfirm]);
 
-  const handleObjectSelected = (obj: CartaObjetoManager) => {
+  const handleObjectSelected = useCallback((obj: CartaObjetoManager) => {
     if (slotPickerIdx === null) return;
     setEquippedObjects(prev => {
       const updated = [...prev];
@@ -182,15 +143,15 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
       return updated;
     });
     setSlotPickerIdx(null);
-  };
+  }, [slotPickerIdx]);
 
-  const handleRemoveObject = (slotIdx: number) => {
+  const handleRemoveObject = useCallback((slotIdx: number) => {
     setEquippedObjects(prev => {
       const updated = [...prev];
       updated[slotIdx] = null;
       return updated;
     });
-  };
+  }, []);
 
   const objectsForPicker = useMemo(() => {
     const equippedIds = new Set(
@@ -630,7 +591,7 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
                         key={obj.idCartaObjeto}
                         onClick={() => handleObjectSelected(obj)}
                         className={`text-left rounded-xl border-2 p-3 transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer ${
-                          OBJETO_RAREZA_COLORS[objRareza] ?? 'border-gray-200 bg-white'
+                          RAREZA_OBJETO_BG[objRareza] ?? 'border-gray-200 bg-white'
                         }`}
                       >
                         <div className="flex justify-between items-start gap-2">

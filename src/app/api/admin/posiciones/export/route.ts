@@ -1,18 +1,17 @@
 // GET /api/admin/posiciones/export
 // Devuelve un fichero .sql con los INSERT de todos los overrides actuales.
 // Guarda este fichero y ejecútalo tras un reset de BD para restaurar los overrides.
-import { db } from '@/lib/mysql';
+import { queryRows } from '@/lib/db-utils';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
     try {
-        const [rows]: any = await db.query(
+        const overrides = await queryRows(
             `SELECT po.idJugador, po.posicionFrontend, j.Nombre
              FROM PosicionOverride po
              JOIN Jugador j ON j.idJugador = po.idJugador
              ORDER BY po.idJugador ASC`
         );
-        const overrides = Array.isArray(rows[0]) ? rows[0] : rows;
 
         if (overrides.length === 0) {
             const sql = '-- Sin overrides de posición registrados.\n';
@@ -33,7 +32,7 @@ export async function GET() {
             '',
         ];
 
-        for (const row of overrides) {
+        for (const row of overrides as any[]) {
             lines.push(
                 `-- ${row.Nombre}`,
                 `INSERT INTO PosicionOverride (idJugador, posicionFrontend) VALUES (${row.idJugador}, '${row.posicionFrontend}') ON DUPLICATE KEY UPDATE posicionFrontend = VALUES(posicionFrontend);`,

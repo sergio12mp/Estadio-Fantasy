@@ -10,10 +10,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     try {
         const [result] = await db.query("SELECT * FROM Temporada WHERE idTemporada = ?", [params.id]) as [Temporada[], any];
         if (!result.length) {
-            console.log(`No se encontró la temporada con ID ${params.id}`);
+            // console.log(`No se encontró la temporada con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la temporada" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Temporada encontrada", result });
     } catch (error) {
         console.error("Error al obtener la temporada:", error);
@@ -35,7 +35,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "No se encontró la temporada para actualizar" }, { status: 404 });
         }
 
-        console.log("Temporada actualizada:", result);
+        // console.log("Temporada actualizada:", result);
         return NextResponse.json({ message: "Temporada actualizada exitosamente", result });
     } catch (error) {
         console.error("Error actualizando temporada:", error);
@@ -51,7 +51,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ message: "No se encontró la temporada para eliminar" }, { status: 404 });
         }
 
-        console.log("Temporada eliminada:", result);
+        // console.log("Temporada eliminada:", result);
         return NextResponse.json({ message: "Temporada eliminada exitosamente", result });
     } catch (error) {
         console.error("Error eliminando temporada:", error);

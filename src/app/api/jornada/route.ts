@@ -11,7 +11,7 @@ export async function GET() {
     try {
         const [result] = await db.query("SELECT * FROM Jornada") as [Jornada[], any];
         if (!result.length) {
-            console.log("No se encontraron jornadas");
+            // console.log("No se encontraron jornadas");
             return NextResponse.json({ message: "No se encontraron jornadas" }, { status: 404 });
         }
         return NextResponse.json({ message: "Jornadas encontradas", result });
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
         const result = await db.query("INSERT INTO Jornada (Nombre, idTemporada) VALUES (?, ?)", [Nombre, idTemporada]) as any;
 
-        console.log("Jornada insertada:", result);
+        // console.log("Jornada insertada:", result);
         return NextResponse.json({ message: "Jornada insertada exitosamente", result }, { status: 201 });
     } catch (error) {
         console.error("Error insertando jornada:", error);

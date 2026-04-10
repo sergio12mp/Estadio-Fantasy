@@ -1,5 +1,5 @@
 // app/api/cartas-manager/route.ts
-import { db } from "@/lib/mysql";
+import { queryRows } from "@/lib/db-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -16,13 +16,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "managerId no es un número válido" }, { status: 400 });
     }
 
-    console.log(`INFO: Obteniendo cartas de jugador para Manager ID: ${managerIdNum}`);
+    // console.log(`INFO: Obteniendo cartas de jugador para Manager ID: ${managerIdNum}`);
 
     // idJornada sirve como límite superior para el acumulado de puntos
     const idJornada = searchParams.get("idJornada");
     const idJornadaNum = idJornada ? parseInt(idJornada) : null;
 
-    const [cartasJugadorQueryResult]: any = await db.query(
+    const cartasJugador = await queryRows(
       `SELECT
           cj.idCartaJugador,
           cj.Rareza,
@@ -48,11 +48,7 @@ export async function GET(req: NextRequest) {
       idJornadaNum ? [idJornadaNum, managerIdNum] : [managerIdNum]
     );
 
-    const cartasJugador = Array.isArray(cartasJugadorQueryResult[0])
-                          ? cartasJugadorQueryResult[0]
-                          : cartasJugadorQueryResult;
-
-    console.log(`INFO: Encontradas ${cartasJugador.length} cartas de jugador para Manager ID: ${managerIdNum}`);
+    // console.log(`INFO: Encontradas ${cartasJugador.length} cartas de jugador para Manager ID: ${managerIdNum}`);
     return NextResponse.json({ cartasJugador }, { status: 200 });
 
   } catch (error: any) {

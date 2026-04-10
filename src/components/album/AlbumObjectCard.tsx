@@ -2,28 +2,14 @@
 
 import React, { useState } from 'react';
 import { Carta } from '@/app/album/page';
+import { RAREZA_CONFIG, RAREZA_STARS, RAREZA_ICON } from '@/lib/rareza-config';
+import { valorVentaObjeto } from '@/lib/rewards';
+import RarityBadge from '@/components/ui/RarityBadge';
 
 interface AlbumObjectCardProps {
     carta: Carta;
     onDelete: (carta: Carta) => void;
 }
-
-const RAREZA_CONFIG: Record<string, {
-    gradient: string;
-    border: string;
-    badge: string;
-    icon: string;
-    starColor: string;
-}> = {
-    'Común':      { gradient: 'from-slate-500 via-slate-600 to-slate-700',   border: 'border-slate-300',  badge: 'bg-slate-100 text-slate-600',   icon: '🎯', starColor: 'text-slate-300'  },
-    'Raro':       { gradient: 'from-blue-500 via-blue-600 to-blue-800',       border: 'border-blue-400',   badge: 'bg-blue-100 text-blue-700',     icon: '🛡️', starColor: 'text-blue-200'   },
-    'Épico':      { gradient: 'from-purple-600 via-purple-700 to-purple-900', border: 'border-purple-500', badge: 'bg-purple-100 text-purple-700', icon: '⚡', starColor: 'text-purple-200' },
-    'Legendario': { gradient: 'from-yellow-400 via-amber-500 to-orange-600',  border: 'border-yellow-400', badge: 'bg-yellow-100 text-yellow-700', icon: '👑', starColor: 'text-yellow-200' },
-};
-
-const RAREZA_STARS: Record<string, string> = {
-    'Común': '★', 'Raro': '★★', 'Épico': '★★★', 'Legendario': '★★★★',
-};
 
 function formatEfecto(efecto?: string, valor?: number, estadistica?: string): string {
     if (!efecto || valor == null) return '';
@@ -45,7 +31,8 @@ export default function AlbumObjectCard({ carta, onDelete }: AlbumObjectCardProp
     const stars = RAREZA_STARS[carta.Rareza] ?? '★';
     const imageUrl = `/images/objetos/${carta.idObjetos}.png`;
     const efectoLabel = formatEfecto(carta.Efecto, carta.ValorEfecto, carta.Estadistica);
-    const valorVenta = ({ 'Común': 5, 'Raro': 10, 'Épico': 15, 'Legendario': 20 }[carta.Rareza] ?? 5);
+    const valorVenta = valorVentaObjeto(carta.Rareza);
+    const icon = RAREZA_ICON[carta.Rareza] ?? '🎯';
 
     return (
         <>
@@ -68,7 +55,7 @@ export default function AlbumObjectCard({ carta, onDelete }: AlbumObjectCardProp
                             className="w-full h-full object-cover"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
-                        <span className="text-4xl select-none absolute">{config.icon}</span>
+                        <span className="text-4xl select-none absolute">{icon}</span>
                     </div>
                 </div>
 
@@ -77,9 +64,7 @@ export default function AlbumObjectCard({ carta, onDelete }: AlbumObjectCardProp
                     <h3 className="font-bold text-gray-900 dark:text-gray-100 text-center text-sm leading-tight truncate">{carta.Nombre}</h3>
 
                     <div className="flex justify-center my-1">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.badge}`}>
-                            {carta.Rareza}
-                        </span>
+                        <RarityBadge rareza={carta.Rareza} />
                     </div>
 
                     {efectoLabel && (
@@ -115,12 +100,10 @@ export default function AlbumObjectCard({ carta, onDelete }: AlbumObjectCardProp
                         {/* Modal header */}
                         <div className={`bg-gradient-to-b ${config.gradient} px-6 py-5 flex flex-col items-center`}>
                             <div className="w-16 h-16 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center text-3xl mb-2">
-                                {config.icon}
+                                {icon}
                             </div>
                             <h2 className="text-white font-bold text-lg text-center">{carta.Nombre}</h2>
-                            <span className={`text-xs font-semibold mt-1 px-3 py-0.5 rounded-full ${config.badge}`}>
-                                {carta.Rareza} {stars}
-                            </span>
+                            <RarityBadge rareza={carta.Rareza} showStars className="mt-1 px-3" />
                         </div>
 
                         {/* Modal body */}

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import RequireAuth from '@/components/RequireAuth';
+import RequireAuth from '@/components/ui/RequireAuth';
 import Link from 'next/link';
 
 interface DesgloseStat {

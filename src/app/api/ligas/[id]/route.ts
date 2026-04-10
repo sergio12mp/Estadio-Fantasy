@@ -6,10 +6,10 @@ export async function GET(req: NextRequest, {params}: {params: {id: string}}) {
     try{
         const result = await db.query("SELECT * FROM Ligas WHERE idLigas = ?", [params.id]);
         if (!result) {
-            console.log("No se encontraron ligas");
+            // console.log("No se encontraron ligas");
             return NextResponse.json({ message: "No se encontraron ligas" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Liga encontrada", result });
     }catch (error) {
         console.error("Error al obtener la liga:", error);
@@ -22,10 +22,10 @@ export async function DELETE(req: NextRequest, {params}: {params: {id: string}})
     try{
         const result = await db.query("DELETE FROM Ligas WHERE idLigas = ?", [params.id]);
         if (!result) {
-            console.log("No se encontraron ligas");
+            // console.log("No se encontraron ligas");
             return NextResponse.json({ message: "No se encontraron ligas" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Liga eliminada", result });
     }catch (error) {
         console.error("Error al eliminar la liga:", error);
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest, {params}: {params: {id: string}}) {
             return NextResponse.json({ message: "Nombre y Descripcion son requeridos" }, { status: 400 });
         }
         const result = await db.query("UPDATE Ligas SET Nombre = ?, Descripcion = ? WHERE idLigas = ?", [Nombre, Descripcion, params.id]);
-        console.log("Liga actualizada:", result);
+        // console.log("Liga actualizada:", result);
         return NextResponse.json({ message: "Liga actualizada exitosamente", result });
     }catch (error) {
         console.error("Error al actualizar la liga:", error);

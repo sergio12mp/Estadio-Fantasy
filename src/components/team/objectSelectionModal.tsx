@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { CartaJugadorEnPlantilla, CartaObjetoManager, ObjetoEquipado } from '@/lib/data';
+import { RAREZA_OBJETO_BG } from '@/lib/rareza-config';
 
 interface ObjectSelectionModalProps {
   jugador: CartaJugadorEnPlantilla;
@@ -10,13 +11,6 @@ interface ObjectSelectionModalProps {
   onClose: () => void;
   onConfirmEquip: (playerId: number, updatedEquippedObjects: ObjetoEquipado[]) => void;
 }
-
-const RAREZA_COLORS: Record<string, string> = {
-  Común: 'border-gray-300 bg-gray-50',
-  Raro: 'border-blue-400 bg-blue-50',
-  Épico: 'border-purple-500 bg-purple-50',
-  Legendario: 'border-yellow-500 bg-yellow-50',
-};
 
 export default function ObjectSelectionModal({
   jugador,
@@ -83,7 +77,7 @@ export default function ObjectSelectionModal({
                   onClick={() => toggle(obj)}
                   disabled={lleno || maxSlots === 0}
                   className={`text-left rounded-lg border-2 p-3 transition-all ${
-                    RAREZA_COLORS[obj.Rareza] ?? 'border-gray-200 bg-white'
+                    RAREZA_OBJETO_BG[obj.Rareza] ?? 'border-gray-200 bg-white'
                   } ${seleccionado ? 'ring-2 ring-blue-500' : ''} ${
                     lleno || maxSlots === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-md cursor-pointer'
                   }`}

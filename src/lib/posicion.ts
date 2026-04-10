@@ -1,7 +1,7 @@
 // src/lib/posicion.ts
 // Helpers SERVER-SIDE para resolver la posición frontend de un jugador,
 // consultando primero la tabla PosicionOverride antes de aplicar el mapeo automático.
-import { db } from '@/lib/mysql';
+import { queryRows } from '@/lib/db-utils';
 import { POSICIONES_MAPEO, PosicionDB, PosicionFrontend } from '@/lib/data';
 
 /**
@@ -25,13 +25,12 @@ export async function resolverPosicion(
     posicionDB: string
 ): Promise<PosicionFrontend> {
     try {
-        const [rows]: any = await db.query(
+        const rows = await queryRows<{ posicionFrontend: string }>(
             'SELECT posicionFrontend FROM PosicionOverride WHERE idJugador = ?',
             [idJugador]
         );
-        const data = Array.isArray(rows[0]) ? rows[0] : rows;
-        if (data.length > 0 && data[0].posicionFrontend) {
-            return data[0].posicionFrontend as PosicionFrontend;
+        if (rows.length > 0 && rows[0].posicionFrontend) {
+            return rows[0].posicionFrontend as PosicionFrontend;
         }
     } catch {
         // Si falla la consulta, fallback al mapeo automático
@@ -52,12 +51,11 @@ export async function cargarOverrides(
 
     try {
         const placeholders = idJugadores.map(() => '?').join(',');
-        const [rows]: any = await db.query(
+        const rows = await queryRows<{ idJugador: number; posicionFrontend: string }>(
             `SELECT idJugador, posicionFrontend FROM PosicionOverride WHERE idJugador IN (${placeholders})`,
             idJugadores
         );
-        const data = Array.isArray(rows[0]) ? rows[0] : rows;
-        for (const row of data) {
+        for (const row of rows) {
             result.set(row.idJugador, row.posicionFrontend as PosicionFrontend);
         }
     } catch {

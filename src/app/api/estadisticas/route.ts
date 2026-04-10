@@ -39,10 +39,10 @@ export async function GET() {
     try {
         const [result] = await db.query("SELECT * FROM Estadisticas") as [Estadisticas[], any];
         if (!result.length) {
-            console.log("No se encontraron estadísticas");
+            // console.log("No se encontraron estadísticas");
             return NextResponse.json({ message: "No se encontraron estadísticas" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Estadísticas encontradas", result });
     } catch (error) {
         console.error("Error al obtener las estadísticas:", error);
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
             ConduccionesProgresivas, EntradasOfensivas, EntradasConExito
         ]) as [any, any];
 
-        console.log("Estadísticas insertadas:", result);
+        // console.log("Estadísticas insertadas:", result);
         return NextResponse.json({ message: "Estadísticas insertadas exitosamente", result }, { status: 201 });
     } catch (error) {
         console.error("Error insertando estadísticas:", error);

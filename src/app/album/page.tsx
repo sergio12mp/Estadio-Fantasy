@@ -1,11 +1,11 @@
 'use client';
 
-import RequireAuth from '@/components/RequireAuth';
+import RequireAuth from '@/components/ui/RequireAuth';
 import { useAuth } from '@/context/auth-context';
 import { useEffect, useState, useMemo } from 'react';
 import { CartaJugadorManager, CartaObjetoManager, getPosicionFrontend } from '@/lib/data';
-import AlbumView from '@/components/AlbumView';
-import AlbumProgress from '@/components/AlbumProgress';
+import AlbumView from '@/components/album/AlbumView';
+import AlbumProgress from '@/components/album/AlbumProgress';
 
 export interface Carta {
   tipo: 'jugador' | 'objeto';

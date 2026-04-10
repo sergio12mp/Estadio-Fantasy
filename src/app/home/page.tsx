@@ -1,6 +1,6 @@
 "use client";
 
-import RequireAuth from "@/components/RequireAuth";
+import RequireAuth from '@/components/ui/RequireAuth';
 import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
 import { useEffect, useState } from "react";

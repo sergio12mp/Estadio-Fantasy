@@ -1,6 +1,6 @@
 // GET /api/jugador/[id]/estadisticas
 // Devuelve info del jugador + todas sus estadísticas por jornada con desglose de puntos
-import { db } from "@/lib/mysql";
+import { queryOne, queryRows } from "@/lib/db-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // Tabla de puntos por estadística según posición
@@ -38,19 +38,15 @@ export async function GET(
     }
 
     try {
-        // Info del jugador
-        const [jugadorRows]: any = await db.query(
+        const jugador = await queryOne(
             `SELECT j.idJugador, j.Nombre, j.Posicion, j.Edad, j.Pais, j.Precio, e.Nombre AS NombreEquipo
              FROM Jugador j JOIN Equipo e ON j.idEquipo = e.idEquipo
              WHERE j.idJugador = ?`,
             [idJugador]
         );
-        const jugadorData = Array.isArray(jugadorRows[0]) ? jugadorRows[0] : jugadorRows;
-        const jugador = jugadorData[0];
         if (!jugador) return NextResponse.json({ error: "Jugador no encontrado" }, { status: 404 });
 
-        // Estadísticas por jornada
-        const [statsRows]: any = await db.query(
+        const statsData = await queryRows(
             `SELECT es.idJornada, j.Nombre AS NombreJornada, es.Puntos,
                     es.Goles, es.Asistencias, es.TarjetasAmarillas, es.TarjetasRojas,
                     es.Disparos, es.DisparosPorteria, es.Toques, es.Entradas,
@@ -64,9 +60,8 @@ export async function GET(
              ORDER BY es.idJornada ASC`,
             [idJugador]
         );
-        const statsData = Array.isArray(statsRows[0]) ? statsRows[0] : statsRows;
 
-        const posCategoria = getPosicionCategoria(jugador.Posicion);
+        const posCategoria = getPosicionCategoria((jugador as any).Posicion);
         const scoringTable = SCORING[posCategoria] ?? SCORING['FW'];
 
         const estadisticas = statsData.map((row: any) => {

@@ -13,10 +13,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     try {
         const [result] = await db.query("SELECT * FROM Plantilla WHERE idPlantilla = ?", [params.id]) as [Plantilla[], any];
         if (!result.length) {
-            console.log(`No se encontró la plantilla con ID ${params.id}`);
+            // console.log(`No se encontró la plantilla con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la plantilla" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Plantilla encontrada", result });
     } catch (error) {
         console.error("Error al obtener la plantilla:", error);
@@ -45,7 +45,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ message: "No se encontró la plantilla para eliminar" }, { status: 404 });
         }
 
-        console.log("Plantilla eliminada:", result);
+        // console.log("Plantilla eliminada:", result);
         return NextResponse.json({ message: "Plantilla eliminada exitosamente", result });
     } catch (error){
         console.error("Error eliminando plantilla:", error);

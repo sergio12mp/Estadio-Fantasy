@@ -2,8 +2,8 @@
 
 "use client";
 
-import RequireAdmin from "@/components/RequireAdmin";
-import SeleccionarJornada from "@/components/SeleccionarJornada";
+import RequireAdmin from '@/components/ui/RequireAdmin';
+import SeleccionarJornada from '@/components/team/SeleccionarJornada';
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 

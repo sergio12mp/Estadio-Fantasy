@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import RequireAuth from "@/components/RequireAuth";
+import RequireAuth from '@/components/ui/RequireAuth';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

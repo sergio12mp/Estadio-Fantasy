@@ -1,6 +1,7 @@
 // GET  /api/admin/posiciones  — lista todos los jugadores con su posición y override
 // PATCH /api/admin/posiciones  — guarda/borra el override de un jugador
 import { db } from '@/lib/mysql';
+import { queryRows } from '@/lib/db-utils';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -35,11 +36,8 @@ export async function GET(req: NextRequest) {
 
         query += ' ORDER BY e.Nombre ASC, j.Nombre ASC';
 
-        const [rows]: any = await db.query(query, params);
-        const jugadores = Array.isArray(rows[0]) ? rows[0] : rows;
+        const jugadores = await queryRows(query, params);
 
-        // Filtro de posición calculada (no está en DB, se calcula en frontend)
-        // pero si viene el filtro lo aplicamos sobre el override o la posición mapeada
         const MAPEO: Record<string, string> = {
             GK: 'POR', CB: 'DEF', RB: 'DEF', LB: 'DEF', WB: 'DEF',
             DM: 'MED', CM: 'MED', LM: 'MED', RM: 'MED', AM: 'MED',

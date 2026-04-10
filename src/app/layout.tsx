@@ -1,7 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
-import { SelectNavbar } from "@/components/selectNavbar";
-import SessionProviderWrapper from "@/components/SessionProviderWrapper";
+import { SelectNavbar } from "@/components/layout/selectNavbar";
+import SessionProviderWrapper from "@/components/layout/SessionProviderWrapper";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

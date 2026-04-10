@@ -12,10 +12,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     try {
         const [result] = await db.query("SELECT * FROM Manager_Ligas WHERE idManager = ?", [params.id]) as [Participaciones[], any];
         if (!result.length) {
-            console.log(`No se encontró la participación con ID ${params.id}`);
+            // console.log(`No se encontró la participación con ID ${params.id}`);
             return NextResponse.json({ message: "No se encontró la participación" }, { status: 404 });
         }
-        console.log(result);
+        // console.log(result);
         return NextResponse.json({ message: "Participación encontrada", result });
     } catch (error) {
         console.error("Error al obtener la participación:", error);
@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ message: "No se encontró la participación para actualizar" }, { status: 404 });
         }
 
-        console.log("Participación actualizada:", result);
+        // console.log("Participación actualizada:", result);
         return NextResponse.json({ message: "Participación actualizada exitosamente", result });
     } catch (error) {
         console.error("Error actualizando participación:", error);
@@ -53,7 +53,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ message: "No se encontró la participación para eliminar" }, { status: 404 });
         }
 
-        console.log("Participación eliminada:", result);
+        // console.log("Participación eliminada:", result);
         return NextResponse.json({ message: "Participación eliminada exitosamente", result });
     } catch (error) {
         console.error("Error eliminando participación:", error);
