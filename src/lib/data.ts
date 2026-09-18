@@ -78,6 +78,7 @@ export interface CartaJugadorManager {
     idCartaJugador: number;
     Rareza: string; // Puede ser "Común", "Raro", "Épico", "Legendario"
     Jugador_idJugadorDB: number; // ID del jugador base
+    slug?: string | null; // Identificador estable para imágenes Cloudinary
     NombreJugador: string;
     PosicionJugadorDB: string;
     PosicionOverride?: string | null; // Posición forzada desde la tabla PosicionOverride (si existe)
@@ -117,6 +118,7 @@ export interface ObjetoEquipado {
 export interface CartaJugadorEnPlantilla {
     idCartaJugador: number;
     idJugador: number; // `Jugador_idJugadorDB` de CartaJugadorManager
+    slug?: string | null; // Identificador estable para imágenes Cloudinary
     Nombre: string; // `NombreJugador`
     Edad: string;
     Pais: string;

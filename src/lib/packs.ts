@@ -16,15 +16,25 @@ const BASE_PROBABILITIES: Record<Rarity, number> = {
   Legendaria: 0.02,
 };
 
-type DBRow = { id: number; nombre: string };
+type DBRow = { id: number; nombre: string; slug?: string | null; equipo?: string; posicion?: string };
 
 let playerCachePromise: Promise<DBRow[]> | null = null;
 let objectCachePromise: Promise<DBRow[]> | null = null;
 
 async function getPlayers(): Promise<DBRow[]> {
   if (!playerCachePromise) {
+    // INNER JOIN con MIN(idJugador) por nombre: un único row por jugador físico,
+    // siempre el mismo idJugador canónico → imagen Cloudinary estable aunque el
+    // jugador tenga filas en varios clubes.
     playerCachePromise = db
-      .query('SELECT idJugador AS id, Nombre AS nombre FROM Jugador')
+      .query(`SELECT J.idJugador AS id, J.Nombre AS nombre, J.slug AS slug,
+                     J.Posicion AS posicion, E.Nombre AS equipo
+              FROM Jugador J
+              JOIN Equipo E ON J.idEquipo = E.idEquipo
+              INNER JOIN (
+                SELECT Nombre, MIN(idJugador) AS canonicalId
+                FROM Jugador GROUP BY Nombre
+              ) AS dedup ON J.idJugador = dedup.canonicalId`)
       .then(([rows]: any) => rows as DBRow[]);
   }
   return playerCachePromise;
@@ -68,7 +78,15 @@ function obtenerRareza(prob: Record<Rarity, number>): Rarity {
 }
 
 function makeCard(tipo: 'jugador' | 'objeto', row: DBRow, prob: Record<Rarity, number>): PackCard {
-  return { tipo, nombre: row.nombre, idDB: row.id, rareza: obtenerRareza(prob) };
+  return {
+    tipo,
+    nombre: row.nombre,
+    idDB: row.id,
+    rareza: obtenerRareza(prob),
+    ...(row.slug ? { slug: row.slug } : {}),
+    ...(row.equipo ? { equipo: row.equipo } : {}),
+    ...(row.posicion ? { posicion: row.posicion } : {}),
+  };
 }
 
 export async function abrirSobre(tipo: PackType, pitty: number): Promise<PackResult> {

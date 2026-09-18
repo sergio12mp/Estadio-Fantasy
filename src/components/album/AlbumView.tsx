@@ -3,7 +3,9 @@
 import { useState, useMemo } from 'react';
 import AlbumPlayerCard from './AlbumPlayerCard';
 import AlbumObjectCard from './AlbumObjectCard';
-import { Carta } from '@/app/album/page';
+import { Carta } from '@/lib/album-types';
+import { SlidersHorizontal, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const RAREZAS = ['Común', 'Raro', 'Épico', 'Legendario'];
 const POSICIONES = ['POR', 'DEF', 'MED', 'DEL'];
@@ -107,6 +109,7 @@ export default function AlbumView({
     countDuplicadosComunes = 0,
 }: AlbumViewProps) {
     const [isGridView, setIsGridView] = useState(true);
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [modoSeleccion, setModoSeleccion] = useState(false);
     const [seleccionadas, setSeleccionadas] = useState<Set<number>>(new Set());
     const [showConfirm, setShowConfirm] = useState(false);
@@ -159,23 +162,54 @@ export default function AlbumView({
         setVendiendo(false);
     };
 
+    const activeFilterCount = [
+        filtroRareza.length > 0,
+        filtroEquipo !== 'todos',
+        filtroPosicion !== 'todos',
+        filtroEstadistica !== 'todos',
+        filtroEfecto !== 'todos',
+        filtroJornada !== null,
+        filtroMinPuntos !== '',
+        filtroTipo !== 'todos',
+    ].filter(Boolean).length;
+
     return (
         <>
-            {/* ── Barra de búsqueda y tipo ── */}
-            <div className="flex flex-wrap gap-2 items-center mb-3">
+            {/* ── Barra de búsqueda ── */}
+            <div className="flex gap-2 items-center mb-3">
                 <input
                     type="text"
-                    placeholder="Buscar por nombre, equipo o estadística..."
+                    placeholder="Buscar por nombre, equipo..."
                     value={busqueda}
                     onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1); }}
-                    className="flex-1 min-w-[180px] px-3 py-1.5 text-sm text-black dark:text-white bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded"
+                    className="flex-1 min-w-0 px-3 py-1.5 text-sm text-black dark:text-white bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded"
                 />
-                <select value={filtroTipo} onChange={(e) => { setFiltroTipo(e.target.value); setPaginaActual(1); }} className={selectClass}>
+                {/* Botón de filtros — visible solo en móvil */}
+                <button
+                    onClick={() => setShowMobileFilters(prev => !prev)}
+                    aria-expanded={showMobileFilters}
+                    aria-label={`Filtros${activeFilterCount > 0 ? ` (${activeFilterCount} activos)` : ''}`}
+                    className={cn(
+                        "md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors shrink-0",
+                        activeFilterCount > 0
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                    )}
+                >
+                    <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+                    {activeFilterCount > 0 && (
+                        <span className="bg-white text-blue-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                            {activeFilterCount}
+                        </span>
+                    )}
+                </button>
+                {/* Selects tipo y orden — solo en desktop */}
+                <select value={filtroTipo} onChange={(e) => { setFiltroTipo(e.target.value); setPaginaActual(1); }} className={cn(selectClass, "hidden md:block")}>
                     <option value="todos">Todos los tipos</option>
                     <option value="jugador">Jugadores</option>
                     <option value="objeto">Objetos</option>
                 </select>
-                <select value={ordenarPor} onChange={(e) => setOrdenarPor(e.target.value)} className={selectClass}>
+                <select value={ordenarPor} onChange={(e) => setOrdenarPor(e.target.value)} className={cn(selectClass, "hidden md:block")}>
                     <option value="nombre">Ordenar: Nombre</option>
                     <option value="rareza">Ordenar: Rareza</option>
                     <option value="puntos">Ordenar: Puntos</option>
@@ -183,8 +217,96 @@ export default function AlbumView({
                 </select>
             </div>
 
-            {/* ── Filtros de rareza ── */}
-            <div className="flex flex-wrap gap-3 items-center mb-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            {/* ── Panel de filtros móvil (colapsable) ── */}
+            {showMobileFilters && (
+                <div className="md:hidden mb-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg space-y-4 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">Filtros</span>
+                        <button
+                            onClick={() => { limpiarFiltros(); setShowMobileFilters(false); }}
+                            className="text-xs text-red-500 hover:text-red-700 underline"
+                        >
+                            Limpiar todo
+                        </button>
+                    </div>
+                    <div>
+                        <p className="text-xs text-muted-foreground mb-1.5">Tipo</p>
+                        <div className="flex gap-2">
+                            {['todos', 'jugador', 'objeto'].map(t => (
+                                <button key={t} onClick={() => { setFiltroTipo(t); setPaginaActual(1); }}
+                                    className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                                        filtroTipo === t ? "bg-blue-600 text-white border-blue-600" : "bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                                    )}>
+                                    {t === 'todos' ? 'Todos' : t === 'jugador' ? 'Jugadores' : 'Objetos'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <p className="text-xs text-muted-foreground mb-1.5">Rareza</p>
+                        <div className="flex flex-wrap gap-2">
+                            {RAREZAS.map((rareza) => {
+                                const colores: Record<string, string> = {
+                                    'Común': 'bg-slate-200 text-slate-700 border-slate-400',
+                                    'Raro': 'bg-blue-100 text-blue-700 border-blue-400',
+                                    'Épico': 'bg-purple-100 text-purple-700 border-purple-400',
+                                    'Legendario': 'bg-yellow-100 text-yellow-700 border-yellow-400',
+                                };
+                                const activo = filtroRareza.includes(rareza);
+                                return (
+                                    <button key={rareza} onClick={() => { setFiltroRareza(rareza); setPaginaActual(1); }}
+                                        className={cn("px-3 py-1 rounded-full text-xs font-semibold border-2 transition-all",
+                                            activo ? colores[rareza] + ' opacity-100 scale-105' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-300 opacity-60'
+                                        )}>
+                                        {rareza}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    {(filtroTipo === 'jugador' || filtroTipo === 'todos') && (
+                        <>
+                            <div>
+                                <p className="text-xs text-muted-foreground mb-1.5">Posición</p>
+                                <div className="flex gap-2">
+                                    {['todos', ...POSICIONES].map(p => (
+                                        <button key={p} onClick={() => { setFiltroPosicion(p); setPaginaActual(1); }}
+                                            className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                                                filtroPosicion === p ? "bg-blue-600 text-white border-blue-600" : "bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                                            )}>
+                                            {p === 'todos' ? 'Todos' : p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground mb-1.5">Equipo</p>
+                                <select value={filtroEquipo} onChange={(e) => { setFiltroEquipo(e.target.value); setPaginaActual(1); }} className={cn(selectClass, "w-full")}>
+                                    {equiposUnicos.map(eq => <option key={eq} value={eq}>{eq === 'todos' ? 'Todos' : eq}</option>)}
+                                </select>
+                            </div>
+                        </>
+                    )}
+                    <div>
+                        <p className="text-xs text-muted-foreground mb-1.5">Ordenar por</p>
+                        <select value={ordenarPor} onChange={(e) => setOrdenarPor(e.target.value)} className={cn(selectClass, "w-full")}>
+                            <option value="nombre">Nombre</option>
+                            <option value="rareza">Rareza</option>
+                            <option value="puntos">Puntos</option>
+                            <option value="equipo">Equipo</option>
+                        </select>
+                    </div>
+                    <button
+                        onClick={() => setShowMobileFilters(false)}
+                        className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                        Aplicar filtros
+                    </button>
+                </div>
+            )}
+
+            {/* ── Filtros de rareza (solo desktop) ── */}
+            <div className="hidden md:flex flex-wrap gap-3 items-center mb-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rareza</span>
                 {RAREZAS.map((rareza) => {
                     const colores: Record<string, string> = {
@@ -210,9 +332,9 @@ export default function AlbumView({
                 })}
             </div>
 
-            {/* ── Filtros de jugador (posición, equipo) ── */}
+            {/* ── Filtros de jugador — solo desktop ── */}
             {mostrarJugador && (
-                <div className="flex flex-wrap gap-2 items-center mb-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="hidden md:flex flex-wrap gap-2 items-center mb-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                     <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">Jugadores</span>
                     <div className="flex items-center gap-1">
                         <label className="text-xs text-gray-500">Posición</label>
@@ -242,9 +364,9 @@ export default function AlbumView({
                 </div>
             )}
 
-            {/* ── Filtros de puntos y jornada (solo jugadores) ── */}
+            {/* ── Filtros de puntos y jornada — solo desktop ── */}
             {mostrarJugador && (
-                <div className="flex flex-wrap gap-2 items-center mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="hidden md:flex flex-wrap gap-2 items-center mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                     <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Puntos</span>
                     <div className="flex items-center gap-1">
                         <label className="text-xs text-gray-500">Jornada hasta</label>
@@ -272,9 +394,9 @@ export default function AlbumView({
                 </div>
             )}
 
-            {/* ── Filtros de objeto (estadística, efecto) ── */}
+            {/* ── Filtros de objeto — solo desktop ── */}
             {mostrarObjeto && (
-                <div className="flex flex-wrap gap-2 items-center mb-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="hidden md:flex flex-wrap gap-2 items-center mb-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
                     <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Objetos</span>
                     <div className="flex items-center gap-1">
                         <label className="text-xs text-gray-500">Estadística</label>
@@ -303,13 +425,14 @@ export default function AlbumView({
                 </div>
             )}
 
-            {/* ── Barra inferior: resultados, paginación, vista, selección ── */}
-            <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
-                <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-500">{cartas.length} cartas</span>
-                    <button onClick={limpiarFiltros} className="text-xs text-red-500 hover:text-red-700 underline">
-                        Limpiar filtros
-                    </button>
+            {/* ── Barra de controles — mobile: 2 filas compactas, desktop: 1 fila ── */}
+            {/* Fila 1: count + limpiar + items/página */}
+            <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm text-gray-500 shrink-0">{cartas.length} cartas</span>
+                <button onClick={limpiarFiltros} className="text-xs text-red-500 hover:text-red-700 underline shrink-0">
+                    Limpiar
+                </button>
+                <div className="flex items-center gap-2 ml-auto">
                     <select
                         value={itemsPorPagina === Infinity ? 'Infinity' : itemsPorPagina}
                         onChange={handleItemsPorPaginaChange}
@@ -317,54 +440,60 @@ export default function AlbumView({
                     >
                         {itemsPorPaginaOptions.map(option => (
                             <option key={option} value={option === Infinity ? 'Infinity' : option}>
-                                {option === Infinity ? 'Sin límite' : `${option} por página`}
+                                {option === Infinity ? 'Sin límite' : `${option}/pág`}
                             </option>
                         ))}
                     </select>
+                    {/* Vista grid/lista — solo desktop */}
+                    <div className="hidden md:flex items-center gap-1">
+                        <button onClick={() => setIsGridView(true)} className={`px-2.5 py-1 rounded text-sm ${isGridView ? 'bg-blue-600 text-white' : 'bg-gray-200 text-black dark:bg-gray-700 dark:text-white'}`}>⊞</button>
+                        <button onClick={() => setIsGridView(false)} className={`px-2.5 py-1 rounded text-sm ${!isGridView ? 'bg-blue-600 text-white' : 'bg-gray-200 text-black dark:bg-gray-700 dark:text-white'}`}>≡</button>
+                    </div>
                 </div>
+            </div>
 
-                <div className="flex items-center gap-2">
-                    {itemsPorPagina !== Infinity && totalPaginas > 1 && (
-                        <>
-                            <button onClick={handlePrevPage} disabled={paginaActual === 1} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-40 text-sm">‹</button>
-                            <span className="text-sm">{paginaActual} / {totalPaginas}</span>
-                            <button onClick={handleNextPage} disabled={paginaActual === totalPaginas} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-40 text-sm">›</button>
-                        </>
-                    )}
+            {/* Fila 2: paginación + acciones */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+                {itemsPorPagina !== Infinity && totalPaginas > 1 && (
+                    <div className="flex items-center gap-1">
+                        <button onClick={handlePrevPage} disabled={paginaActual === 1} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-40 text-sm">‹</button>
+                        <span className="text-sm px-1">{paginaActual}/{totalPaginas}</span>
+                        <button onClick={handleNextPage} disabled={paginaActual === totalPaginas} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-40 text-sm">›</button>
+                    </div>
+                )}
+                <div className="ml-auto flex items-center gap-2">
                     <button
                         onClick={handleToggleModoSeleccion}
-                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        className={cn(
+                            'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
                             modoSeleccion
                                 ? 'bg-orange-500 text-white hover:bg-orange-600'
-                                : 'bg-gray-200 text-black dark:bg-gray-700 dark:text-white hover:bg-gray-300'
-                        }`}
+                                : 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white hover:bg-gray-300'
+                        )}
                     >
-                        {modoSeleccion ? 'Cancelar selección' : 'Seleccionar varias'}
+                        {modoSeleccion ? '✕ Cancelar' : '☑ Seleccionar'}
                     </button>
+                    {/* Acciones duplicados — desktop completo, móvil como icono */}
                     {onEliminarDuplicados && (
                         <button
                             onClick={onEliminarDuplicados}
-                            title={`${countDuplicadosVendibles} cartas duplicadas vendibles`}
-                            className="px-3 py-1 rounded text-sm font-medium bg-amber-100 text-amber-800 border border-amber-400 hover:bg-amber-200 transition-colors"
+                            title={`Vender ${countDuplicadosVendibles} duplicados`}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-100 text-amber-800 border border-amber-400 hover:bg-amber-200 transition-colors"
                         >
-                            Vender duplicados {countDuplicadosVendibles > 0 && <span className="ml-1 bg-amber-500 text-white rounded-full px-1.5 text-xs">{countDuplicadosVendibles}</span>}
+                            <span className="hidden md:inline">Vender duplicados </span>
+                            <span className="md:hidden">Dups </span>
+                            {countDuplicadosVendibles > 0 && <span className="bg-amber-500 text-white rounded-full px-1.5">{countDuplicadosVendibles}</span>}
                         </button>
                     )}
                     {onEliminarComunesRepetidos && (
                         <button
                             onClick={onEliminarComunesRepetidos}
-                            title={`${countDuplicadosComunes} cartas comunes repetidas`}
-                            className="px-3 py-1 rounded text-sm font-medium bg-slate-100 text-slate-700 border border-slate-400 hover:bg-slate-200 transition-colors"
+                            title={`Limpiar ${countDuplicadosComunes} comunes`}
+                            className="hidden md:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-400 hover:bg-slate-200 transition-colors"
                         >
-                            Limpiar comunes {countDuplicadosComunes > 0 && <span className="ml-1 bg-slate-500 text-white rounded-full px-1.5 text-xs">{countDuplicadosComunes}</span>}
+                            Comunes {countDuplicadosComunes > 0 && <span className="ml-1 bg-slate-500 text-white rounded-full px-1.5">{countDuplicadosComunes}</span>}
                         </button>
                     )}
-                    <button onClick={() => setIsGridView(true)} className={`px-3 py-1 rounded text-sm ${isGridView ? 'bg-blue-600 text-white' : 'bg-gray-200 text-black dark:bg-gray-700 dark:text-white'}`}>
-                        Cuadrícula
-                    </button>
-                    <button onClick={() => setIsGridView(false)} className={`px-3 py-1 rounded text-sm ${!isGridView ? 'bg-blue-600 text-white' : 'bg-gray-200 text-black dark:bg-gray-700 dark:text-white'}`}>
-                        Lista
-                    </button>
                 </div>
             </div>
 
@@ -372,7 +501,7 @@ export default function AlbumView({
 
             {/* ── Grid o Lista ── */}
             {isGridView ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-24">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-24">
                     {cartas.map((c, idx) => {
                         const seleccionada = seleccionadas.has(c.id);
                         const vendible = puedeVender(c);
@@ -456,7 +585,10 @@ export default function AlbumView({
 
             {/* ── Barra flotante de selección múltiple ── */}
             {modoSeleccion && seleccionadas.size > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pb-4 px-4 pointer-events-none">
+                <div
+              className="fixed left-0 right-0 z-[60] flex justify-center pb-4 px-4 pointer-events-none"
+              style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
+            >
                     <div className="bg-gray-900 text-white rounded-2xl shadow-2xl px-6 py-4 flex items-center gap-6 pointer-events-auto border border-gray-700 max-w-lg w-full">
                         <div className="flex-1">
                             <p className="font-bold text-sm">{seleccionadas.size} carta{seleccionadas.size !== 1 ? 's' : ''} seleccionada{seleccionadas.size !== 1 ? 's' : ''}</p>

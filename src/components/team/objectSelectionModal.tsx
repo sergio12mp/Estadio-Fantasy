@@ -50,8 +50,8 @@ export default function ObjectSelectionModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 md:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-lg shadow-xl p-6 w-full md:max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Equipar Objetos — {jugador.Nombre}

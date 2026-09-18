@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Readable } from 'stream';
+import { randomUUID } from 'crypto';
 import csv from 'csv-parser';
 import { db } from "@/lib/mysql";
 
@@ -119,7 +120,7 @@ export async function POST(req: NextRequest) {
 
         for (const row of rows) {
             const equipos = [row.Home_Team, row.Away_Team];
-            const jornadaNombre = row.Matchweek;
+            const jornadaNombre = row.Matchweek ?? row.Round ?? row.RoundNumber;
             const nombreEquipoLocal = row.Home_Team;
             const nombreEquipoVisitante = row.Away_Team;
             let idEquipoLocal: number = 0;
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
             const estadisticas = [
                 {
                     idPartido: 0,
-                    idJornada: row.Matchweek,
+                    idJornada: 0,
                     idEquipo: 0,
                     idJugador: null as number | null,
                     min: parseFloat(row.Min) || 0,
@@ -253,9 +254,13 @@ export async function POST(req: NextRequest) {
                         [jugador.nombre, jugador.idEquipo]
                     );
                     if (!existingJugadorRows || existingJugadorRows.length === 0) {
+                        const slug = jugador.nombre
+                            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                            .toLowerCase().trim()
+                            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                         await db.query(
-                            'INSERT INTO Jugador (Nombre, Edad, Pais, Posicion, Precio, idEquipo) VALUES (?, ?, ?, ?, ?, ?)',
-                            [jugador.nombre, jugador.edad, jugador.pais, jugador.posicion, jugador.precio, jugador.idEquipo]
+                            'INSERT INTO Jugador (Nombre, Edad, Pais, Posicion, Precio, idEquipo, slug) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                            [jugador.nombre, jugador.edad, jugador.pais, jugador.posicion, jugador.precio, jugador.idEquipo, slug]
                         );
                     }
                 } catch (error: any) {
@@ -278,19 +283,8 @@ export async function POST(req: NextRequest) {
                     if (!jugadorDBRows?.length) { continue; }
                     estadistica.idJugador = jugadorDBRows[0].idJugador;
 
-                    const [jornadaDBRows]: any = await db.query(
-                        'SELECT idJornada FROM Jornada WHERE Nombre = ? AND idTemporada = ?',
-                        [jornadaNombre, 1]
-                    );
-                    if (!jornadaDBRows?.length) { continue; }
-                    estadistica.idJornada = jornadaDBRows[0].idJornada;
-
-                    const [partidoDBRows]: any = await db.query(
-                        'SELECT idPartido FROM Partido WHERE idJornada = ? AND idEquipoLocal = ? AND idEquipoVisitante = ?',
-                        [estadistica.idJornada, idEquipoLocal, idEquipoVisitante]
-                    );
-                    if (!partidoDBRows?.length) { continue; }
-                    estadistica.idPartido = partidoDBRows[0].idPartido;
+                    if (!idJornada || !estadistica.idPartido) { continue; }
+                    estadistica.idJornada = idJornada;
 
                     const [existingEstadisticaRows]: any = await db.query(
                         'SELECT idEstadisticas FROM Estadisticas WHERE idPartido = ? AND idJugador = ?',
@@ -319,6 +313,27 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // --- LIGAS DE CLUB (auto-crear una por equipo si no existe) ---
+        let ligasClubCreadas = 0;
+        for (const [nombreEquipo, idEquipo] of equiposMap.entries()) {
+            try {
+                const [existeLiga]: any = await db.query(
+                    'SELECT idLigas FROM Ligas WHERE tipo = ? AND idEquipo = ?',
+                    ['club', idEquipo]
+                );
+                if (!existeLiga?.length) {
+                    const codigo = randomUUID();
+                    await db.query(
+                        'INSERT INTO Ligas (Nombre, Codigo, tipo, idEquipo) VALUES (?, ?, ?, ?)',
+                        [`${nombreEquipo} Club`, codigo, 'club', idEquipo]
+                    );
+                    ligasClubCreadas++;
+                }
+            } catch (err: any) {
+                console.error(`Error creando liga de club para ${nombreEquipo}:`, err.message);
+            }
+        }
+
         // --- CSV DE PORTEROS (opcional) ---
         let filasPorteros = 0;
         if (filePorteros) {
@@ -331,6 +346,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             message: 'CSV procesado correctamente',
             filas: rows.length,
+            ligasClubCreadas,
             ...(filePorteros ? { filasPorteros } : {}),
         });
     } catch (error) {

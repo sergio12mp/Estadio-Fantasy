@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Carta } from '@/app/album/page';
+import { Carta } from '@/lib/album-types';
 import { RAREZA_CONFIG, RAREZA_STARS } from '@/lib/rareza-config';
 import { valorVentaJugador } from '@/lib/rewards';
 import RarityBadge from '@/components/ui/RarityBadge';
+import { getPlayerImageUrl } from '@/lib/player-image';
 
 interface AlbumPlayerCardProps {
     carta: Carta;
@@ -22,13 +23,7 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
     const config = RAREZA_CONFIG[carta.Rareza] ?? RAREZA_CONFIG['Común'];
     const stars = RAREZA_STARS[carta.Rareza] ?? '★';
     const inicial = carta.Nombre ? carta.Nombre.charAt(0).toUpperCase() : '?';
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    // w_80,h_80,c_fill: redimensiona al tamaño exacto del avatar
-    // f_auto: WebP en navegadores compatibles
-    // q_auto: compresión automática (~3KB vs ~30KB original)
-    const imageUrl = cloudName
-        ? `https://res.cloudinary.com/${cloudName}/image/upload/w_80,h_80,c_fill,f_auto,q_auto/estadio-fantasy/jugadores/${carta.jugadorId}.jpg`
-        : `/images/jugadores/${carta.jugadorId}.jpg`;
+    const imageUrl = getPlayerImageUrl(carta.slug, 80, carta.jugadorId);
     const isComun = carta.Rareza === 'Común';
     const valorVenta = valorVentaJugador(carta.Rareza);
 
@@ -47,7 +42,7 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
                         <span className={`text-xs font-bold ${config.starColor} drop-shadow`}>{stars}</span>
                     </div>
                     <div className={`w-20 h-20 rounded-full mx-auto mt-1 border-4 ${config.avatarBorder} bg-white/20 flex items-center justify-center overflow-hidden shadow-lg backdrop-blur-sm relative`}>
-                        {!imgError && (
+                        {imageUrl && !imgError ? (
                             <Image
                                 src={imageUrl}
                                 alt={carta.Nombre}
@@ -56,8 +51,7 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
                                 className="w-full h-full object-cover"
                                 onError={() => setImgError(true)}
                             />
-                        )}
-                        {imgError && (
+                        ) : (
                             <span className="text-white text-3xl font-extrabold select-none">{inicial}</span>
                         )}
                     </div>
@@ -65,7 +59,7 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
 
                 {/* White body */}
                 <div className="bg-white dark:bg-gray-800 flex-1 flex flex-col px-3 pt-3 pb-2 -mt-5 rounded-t-2xl">
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100 text-center text-sm leading-tight truncate">{carta.Nombre}</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100 text-center text-sm leading-tight line-clamp-2">{carta.Nombre}</h3>
                     <p className="text-xs text-gray-400 text-center mb-1 truncate">{carta.NombreEquipo}</p>
 
                     <div className="flex justify-center mb-2">
@@ -121,8 +115,12 @@ export default function AlbumPlayerCard({ carta, onDelete }: AlbumPlayerCardProp
                     >
                         {/* Modal header */}
                         <div className={`bg-gradient-to-b ${config.gradient} px-6 py-5 flex flex-col items-center`}>
-                            <div className={`w-16 h-16 rounded-full ${config.avatarBorder} border-4 bg-white/20 flex items-center justify-center text-white text-3xl font-extrabold mb-2`}>
-                                {inicial}
+                            <div className={`w-16 h-16 rounded-full ${config.avatarBorder} border-4 bg-white/20 flex items-center justify-center overflow-hidden mb-2`}>
+                                {imageUrl && !imgError ? (
+                                    <Image src={imageUrl} alt={carta.Nombre} width={64} height={64} className="w-full h-full object-cover" onError={() => setImgError(true)} />
+                                ) : (
+                                    <span className="text-white text-3xl font-extrabold select-none">{inicial}</span>
+                                )}
                             </div>
                             <h2 className="text-white font-bold text-lg text-center">{carta.Nombre}</h2>
                             <p className="text-white/70 text-sm">{carta.NombreEquipo}</p>

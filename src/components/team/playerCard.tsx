@@ -1,8 +1,10 @@
 // src/components/playerCard.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { CartaJugadorEnPlantilla, ObjetoEquipado } from '@/lib/data';
 import { RAREZA_CONFIG, RAREZA_STARS, RAREZA_OBJETO_COLORS } from '@/lib/rareza-config';
 import RarityBadge from '@/components/ui/RarityBadge';
+import { getPlayerImageUrl } from '@/lib/player-image';
 
 interface PlayerCardProps {
   carta: CartaJugadorEnPlantilla;
@@ -12,6 +14,12 @@ interface PlayerCardProps {
 }
 
 const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, fieldMode }) => {
+  const [imgError, setImgError] = useState(false);
+
+  // Resetear error al cambiar de jugador (evita que el estado "pegado" de error
+  // de una carta anterior contamine la carta que ocupa el mismo slot)
+  useEffect(() => { setImgError(false); }, [carta.idJugador]);
+
   if (!carta) return null;
 
   const config = RAREZA_CONFIG[carta.Rareza] ?? RAREZA_CONFIG['Común'];
@@ -19,6 +27,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
   const objetosEquipados = carta.objetosEquipados || [];
   const maxObjetosSlots = carta.maxObjetosSlots || 0;
   const inicial = carta.Nombre ? carta.Nombre.charAt(0).toUpperCase() : '?';
+  const imageUrl = getPlayerImageUrl(carta.slug, fieldMode ? 40 : 80, carta.idJugador);
 
 
   if (fieldMode) {
@@ -29,17 +38,30 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
         onClick={onClick}
       >
         {/* Compact gradient header */}
-        <div className={`bg-gradient-to-r ${config.gradient} px-2 py-1.5 flex items-center gap-1.5`}>
-          <div className={`w-7 h-7 rounded-full border-2 ${config.avatarBorder} bg-white/20 flex items-center justify-center text-white text-xs font-extrabold shrink-0 select-none`}>
-            {inicial}
+        <div className={`bg-gradient-to-b ${config.gradient} px-1 pt-1.5 pb-5 relative`}>
+          <div className="flex justify-between items-start px-0.5 mb-1">
+            <span className="text-[9px] font-bold text-white/90 bg-white/20 px-1 py-0.5 rounded-full leading-none">
+              {carta.PosicionFrontend}
+            </span>
+            <span className={`text-[9px] font-bold ${config.starColor} drop-shadow leading-none`}>{stars}</span>
           </div>
-          <span className="text-[10px] font-bold text-white/90 bg-white/20 px-1.5 py-0.5 rounded-full shrink-0">
-            {carta.PosicionFrontend}
-          </span>
-          <span className={`text-[10px] font-bold ${config.starColor} drop-shadow ml-auto`}>{stars}</span>
+          <div className={`w-10 h-10 rounded-full mx-auto border-2 ${config.avatarBorder} bg-white/20 flex items-center justify-center overflow-hidden shadow-md`}>
+            {imageUrl && !imgError ? (
+              <Image
+                src={imageUrl}
+                alt={carta.Nombre}
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <span className="text-white text-sm font-extrabold select-none">{inicial}</span>
+            )}
+          </div>
         </div>
         {/* Body */}
-        <div className="bg-white dark:bg-gray-800 px-2 pt-1 pb-1.5">
+        <div className="bg-white dark:bg-gray-800 px-1.5 pt-1 pb-1.5 -mt-3 rounded-t-lg">
           <p className="font-bold text-gray-900 dark:text-gray-100 text-xs leading-tight truncate">{carta.Nombre}</p>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{carta.NombreEquipo}</p>
           {carta.PuntosJornada != null && (
@@ -105,8 +127,19 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ carta, onEquipObject, onClick, 
           <span className={`text-xs font-bold ${config.starColor} drop-shadow`}>{stars}</span>
         </div>
         {/* Avatar */}
-        <div className={`w-20 h-20 rounded-full mx-auto mt-1 border-4 ${config.avatarBorder} bg-white/20 flex items-center justify-center text-white text-3xl font-extrabold shadow-lg backdrop-blur-sm select-none`}>
-          {inicial}
+        <div className={`w-20 h-20 rounded-full mx-auto mt-1 border-4 ${config.avatarBorder} bg-white/20 flex items-center justify-center overflow-hidden shadow-lg`}>
+          {imageUrl && !imgError ? (
+            <Image
+              src={imageUrl}
+              alt={carta.Nombre}
+              width={80}
+              height={80}
+              className="w-full h-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <span className="text-white text-3xl font-extrabold select-none">{inicial}</span>
+          )}
         </div>
       </div>
 

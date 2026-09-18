@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
                 pjo.idCartaJugador, pjo.posicionEnPlantilla,
                 pjo.idCartaObjeto1, pjo.idCartaObjeto2, pjo.idCartaObjeto3,
                 cj.Rareza AS RarezaCartaJugador,
-                j.idJugador, j.Nombre AS NombreJugador, j.Posicion AS PosicionJugadorDB, j.Edad, j.Pais, j.Precio,
+                j.idJugador, j.slug, j.Nombre AS NombreJugador, j.Posicion AS PosicionJugadorDB, j.Edad, j.Pais, j.Precio,
                 e.Nombre AS NombreEquipo,
                 co1.Rareza AS Rareza1, o1.idObjetos AS idO1, o1.Nombre AS NombreO1, o1.Descripcion AS DescO1, o1.ValorEfecto AS Valor1, o1.Efecto AS Efecto1, o1.Estadistica AS Stat1,
                 co2.Rareza AS Rareza2, o2.idObjetos AS idO2, o2.Nombre AS NombreO2, o2.Descripcion AS DescO2, o2.ValorEfecto AS Valor2, o2.Efecto AS Efecto2, o2.Estadistica AS Stat2,
@@ -160,6 +160,7 @@ export async function POST(req: NextRequest) {
         };
 
         const idsCartasJugador = jugadoresParaGuardar.map((j: any) => j.idCartaJugador).filter(Boolean);
+        let equiposEnPlantilla: number[] = [];
 
         if (idsCartasJugador.length > 0) {
             const placeholders = idsCartasJugador.map(() => '?').join(',');
@@ -217,6 +218,7 @@ export async function POST(req: NextRequest) {
                 }
             }
 
+            equiposEnPlantilla = [...new Set(cartasData.map((c: any) => c.idEquipo as number))];
             const cartaMap = new Map(cartasData.map((c: any) => [c.idCartaJugador, c]));
             let usoTotal = 0;
 
@@ -299,6 +301,24 @@ export async function POST(req: NextRequest) {
             }
 
             await db.query("COMMIT");
+
+            // Auto-unir al manager a la liga de club de cada equipo que tiene en plantilla
+            for (const idEquipo of equiposEnPlantilla) {
+                try {
+                    const [ligaClub]: any = await db.query(
+                        'SELECT idLigas FROM Ligas WHERE tipo = ? AND idEquipo = ?',
+                        ['club', idEquipo]
+                    );
+                    if (!ligaClub?.length) continue;
+                    await db.query(
+                        'INSERT IGNORE INTO Manager_Ligas (Manager_idManager, Ligas_idLigas, puntuacion_actual) VALUES (?, ?, 0)',
+                        [managerIdNum, ligaClub[0].idLigas]
+                    );
+                } catch (err: any) {
+                    console.error(`Error auto-uniendo manager ${managerIdNum} a liga de club (equipo ${idEquipo}):`, err.message);
+                }
+            }
+
             return NextResponse.json({ message: "Plantilla guardada exitosamente.", idPlantilla: idPlantillaActual }, { status: 200 });
 
         } catch (transactionError: any) {

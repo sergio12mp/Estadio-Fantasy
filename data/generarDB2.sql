@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Jugador` (
   `Posicion`  VARCHAR(45) NULL DEFAULT NULL,
   `Precio`    INT         NULL DEFAULT NULL,
   `idEquipo`  INT         NULL DEFAULT NULL,
+  `slug`      VARCHAR(150) NULL DEFAULT NULL,
   PRIMARY KEY (`idJugador`),
   INDEX `idx_Jugador_idEquipo` (`idEquipo` ASC),
   UNIQUE INDEX `uq_Jugador_idJugador_idEquipo` (`idJugador`, `idEquipo`),
@@ -71,6 +72,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Jornada` (
   `idTemporada` INT         NOT NULL,
   PRIMARY KEY (`idJornada`),
   INDEX `idx_Jornada_idTemporada` (`idTemporada` ASC),
+  UNIQUE INDEX `uq_Jornada_NombreTemporada` (`Nombre`, `idTemporada`),
   CONSTRAINT `fk_Jornada_Temporada`
     FOREIGN KEY (`idTemporada`)
     REFERENCES `mydb`.`Temporada` (`idTemporada`)
@@ -247,6 +249,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Ligas` (
   `tipo`     VARCHAR(45)  NOT NULL DEFAULT 'privada',
   `idEquipo` INT          NULL DEFAULT NULL,
   PRIMARY KEY (`idLigas`),
+  UNIQUE INDEX `uq_Liga_Club` (`tipo`, `idEquipo`),
   CONSTRAINT `fk_Ligas_Equipo`
     FOREIGN KEY (`idEquipo`)
     REFERENCES `mydb`.`Equipo` (`idEquipo`)

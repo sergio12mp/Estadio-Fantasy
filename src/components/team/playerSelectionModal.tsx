@@ -198,8 +198,9 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
   const equippedCount = equippedObjects.filter(Boolean).length;
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col">
+    /* En móvil se ancla al fondo (items-end); en desktop es modal centrado (md:items-center) */
+    <div className="fixed inset-0 bg-black/60 flex items-end md:items-center justify-center z-50 md:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-xl shadow-2xl w-full md:max-w-3xl max-h-[92vh] flex flex-col">
 
         {/* Header */}
         <div className="flex justify-between items-center px-5 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
@@ -254,254 +255,233 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
                 </div>
               </div>
 
-              {/* Object slots */}
-              <div className="shrink-0 flex flex-col items-end gap-2">
-                {maxSlots === 0 ? (
-                  <p className="text-white/60 text-xs italic text-right">Sin slots<br/>de objeto</p>
-                ) : (
-                  <>
-                    <p className="text-white/70 text-xs text-right">
-                      Objetos: {equippedCount}/{maxSlots}
-                    </p>
-                    <div className="flex gap-2">
-                      {Array.from({ length: maxSlots }).map((_, i) => {
-                        const obj = equippedObjects[i];
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => obj ? handleRemoveObject(i) : setSlotPickerIdx(i)}
-                            title={obj ? `${obj.NombreObjeto} (click para quitar)` : 'Click para equipar objeto'}
-                            className={`w-12 h-12 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all text-xs font-bold
-                              ${obj
-                                ? 'border-white bg-white/30 text-white hover:bg-red-400/50 hover:border-red-300'
-                                : 'border-white/50 bg-white/10 text-white/60 hover:bg-white/20 hover:border-white hover:text-white'
-                              }`}
-                          >
-                            {obj ? (
-                              <>
-                                <span className="text-base">🎯</span>
-                                <span className="text-[9px] text-white/80 leading-tight max-w-[40px] truncate">{obj.NombreObjeto.split(' ')[0]}</span>
-                              </>
-                            ) : (
-                              <span className="text-lg leading-none">+</span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {equippedCount > 0 && (
-                      <div className="flex flex-col gap-0.5">
-                        {equippedObjects.map((obj, i) =>
-                          obj ? (
-                            <p key={i} className="text-white/80 text-[11px] truncate max-w-[150px] text-right">
-                              🎯 {obj.NombreObjeto}
-                            </p>
-                          ) : null
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
+              {/* Object slots summary */}
+              <div className="shrink-0 text-right">
+                <p className="text-white/70 text-xs">
+                  {maxSlots === 0 ? 'Sin slots de objeto' : `Objetos: ${equippedCount}/${maxSlots}`}
+                </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Filters */}
-        <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0 space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <input
-              type="text"
-              placeholder="Buscar jugador o equipo..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="flex-1 min-w-[160px] px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-black dark:text-white"
-            />
-            <select
-              value={filtroEquipo}
-              onChange={(e) => setFiltroEquipo(e.target.value)}
-              className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-black dark:text-white"
-            >
-              {equiposUnicos.map(e => (
-                <option key={e} value={e}>{e === 'todos' ? 'Todos los equipos' : e}</option>
-              ))}
-            </select>
-            <select
-              value={ordenarPor}
-              onChange={(e) => setOrdenarPor(e.target.value as any)}
-              className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-black dark:text-white"
-            >
-              <option value="rareza">Ordenar: Rareza</option>
-              <option value="nombre">Ordenar: Nombre</option>
-              <option value="puntos">Ordenar: Puntos</option>
-            </select>
-          </div>
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Rareza:</span>
-            {RAREZAS.map(rareza => {
-              const activo = filtroRareza.includes(rareza);
-              return (
-                <button
-                  key={rareza}
-                  onClick={() => toggleRareza(rareza)}
-                  className={`px-3 py-0.5 rounded-full text-xs font-semibold border-2 transition-all ${
-                    activo
-                      ? RAREZA_BADGE[rareza] + ' opacity-100 scale-105'
-                      : 'bg-white dark:bg-gray-700 text-gray-400 border-gray-300 dark:border-gray-600 opacity-60'
-                  }`}
-                >
-                  {rareza}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Player list */}
-        <div className="overflow-y-auto flex-1 p-4">
-          {jugadoresFiltrados.length === 0 ? (
-            <p className="text-center text-gray-400 mt-8">No hay jugadores disponibles con esos filtros.</p>
-          ) : step === 'select' ? (
-            /* Phase 1: card grid */
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {jugadoresFiltrados.map((jugador) => {
-                const rNorm = normalizeRareza(jugador.Rareza);
-                return (
-                  <div
-                    key={jugador.idCartaJugador}
-                    onClick={() => handlePlayerClick(jugador)}
-                    className={`rounded-xl overflow-hidden border-2 ${RAREZA_BORDER[rNorm] ?? 'border-gray-300'} shadow-md cursor-pointer hover:scale-[1.02] hover:shadow-xl transition-all duration-200`}
-                  >
-                    <div className={`bg-gradient-to-b ${RAREZA_GRADIENT[rNorm]} px-3 pt-3 pb-6`}>
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="text-xs font-bold text-white/90 uppercase bg-white/20 px-2 py-0.5 rounded-full">
-                          {getPosicionFrontend(jugador.PosicionJugadorDB)}
-                        </span>
-                        <span className="text-xs text-white/80">{RAREZA_STARS[rNorm]}</span>
-                      </div>
-                      <div className="w-14 h-14 rounded-full mx-auto mt-1 bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-2xl font-extrabold shadow-lg select-none">
-                        {jugador.NombreJugador.charAt(0)}
-                      </div>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 px-2 pt-2 pb-2 -mt-3 rounded-t-xl">
-                      <h3 className="font-bold text-gray-900 dark:text-gray-100 text-center text-xs leading-tight truncate">
-                        {jugador.NombreJugador}
-                      </h3>
-                      <p className="text-xs text-gray-400 text-center truncate">{jugador.NombreEquipo}</p>
-                      <div className="flex justify-center mt-1">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${RAREZA_BADGE[rNorm] ?? ''}`}>
-                          {rNorm}
-                        </span>
-                      </div>
-                      {jugador.Puntos != null && (
-                        <p className={`text-center text-xs font-semibold mt-0.5 ${jugador.Puntos < 0 ? 'text-red-500' : 'text-amber-600'}`}>
-                          ⭐ {jugador.Puntos} pts acum.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+        {/* Filters — only in select step */}
+        {step === 'select' && (
+          <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0 space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <input
+                type="text"
+                placeholder="Buscar jugador o equipo..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="flex-1 min-w-[160px] px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-black dark:text-white"
+              />
+              <select
+                value={filtroEquipo}
+                onChange={(e) => setFiltroEquipo(e.target.value)}
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-black dark:text-white"
+              >
+                {equiposUnicos.map(e => (
+                  <option key={e} value={e}>{e === 'todos' ? 'Todos los equipos' : e}</option>
+                ))}
+              </select>
+              <select
+                value={ordenarPor}
+                onChange={(e) => setOrdenarPor(e.target.value as any)}
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-black dark:text-white"
+              >
+                <option value="rareza">Ordenar: Rareza</option>
+                <option value="nombre">Ordenar: Nombre</option>
+                <option value="puntos">Ordenar: Puntos</option>
+              </select>
             </div>
-          ) : (
-            /* Phase 2: card grid — same layout as select, with selection highlight */
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {jugadoresFiltrados.map((jugador) => {
-                const rNorm = normalizeRareza(jugador.Rareza);
-                const isSelected = selectedPlayer?.idCartaJugador === jugador.idCartaJugador;
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Rareza:</span>
+              {RAREZAS.map(rareza => {
+                const activo = filtroRareza.includes(rareza);
                 return (
-                  <div
-                    key={jugador.idCartaJugador}
-                    onClick={() => handlePlayerClick(jugador)}
-                    className={`rounded-xl overflow-hidden border-2 cursor-pointer hover:scale-[1.02] hover:shadow-xl transition-all duration-200 ${
-                      isSelected
-                        ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
-                        : (RAREZA_BORDER[rNorm] ?? 'border-gray-300')
+                  <button
+                    key={rareza}
+                    onClick={() => toggleRareza(rareza)}
+                    className={`px-3 py-0.5 rounded-full text-xs font-semibold border-2 transition-all ${
+                      activo
+                        ? RAREZA_BADGE[rareza] + ' opacity-100 scale-105'
+                        : 'bg-white dark:bg-gray-700 text-gray-400 border-gray-300 dark:border-gray-600 opacity-60'
                     }`}
                   >
-                    <div className={`bg-gradient-to-b ${RAREZA_GRADIENT[rNorm]} px-3 pt-3 pb-6`}>
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="text-xs font-bold text-white/90 uppercase bg-white/20 px-2 py-0.5 rounded-full">
-                          {getPosicionFrontend(jugador.PosicionJugadorDB)}
-                        </span>
-                        <span className="text-xs text-white/80">{RAREZA_STARS[rNorm]}</span>
-                      </div>
-                      <div className="w-14 h-14 rounded-full mx-auto mt-1 bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-2xl font-extrabold shadow-lg select-none">
-                        {jugador.NombreJugador.charAt(0)}
-                      </div>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 px-2 pt-2 pb-2 -mt-3 rounded-t-xl">
-                      <h3 className="font-bold text-gray-900 dark:text-gray-100 text-center text-xs leading-tight truncate">
-                        {jugador.NombreJugador}
-                      </h3>
-                      <p className="text-xs text-gray-400 text-center truncate">{jugador.NombreEquipo}</p>
-                      <div className="flex justify-center mt-1">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${RAREZA_BADGE[rNorm] ?? ''}`}>
-                          {rNorm}
-                        </span>
-                      </div>
-                      {jugador.Puntos != null && (
-                        <p className={`text-center text-xs font-semibold mt-0.5 ${jugador.Puntos < 0 ? 'text-red-500' : 'text-amber-600'}`}>
-                          ⭐ {jugador.Puntos} pts acum.
-                        </p>
-                      )}
-                      {isSelected && (
-                        <p className="text-center text-xs text-blue-600 dark:text-blue-400 font-bold mt-0.5">✓ Seleccionado</p>
-                      )}
-                    </div>
-                  </div>
+                    {rareza}
+                  </button>
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Player list — only in select step */}
+        {step === 'select' && (
+          <div className="overflow-y-auto flex-1 p-4">
+            {jugadoresFiltrados.length === 0 ? (
+              <p className="text-center text-gray-400 mt-8">No hay jugadores disponibles con esos filtros.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {jugadoresFiltrados.map((jugador) => {
+                  const rNorm = normalizeRareza(jugador.Rareza);
+                  return (
+                    <div
+                      key={jugador.idCartaJugador}
+                      onClick={() => handlePlayerClick(jugador)}
+                      className={`rounded-xl overflow-hidden border-2 ${RAREZA_BORDER[rNorm] ?? 'border-gray-300'} shadow-md cursor-pointer hover:scale-[1.02] hover:shadow-xl transition-all duration-200`}
+                    >
+                      <div className={`bg-gradient-to-b ${RAREZA_GRADIENT[rNorm]} px-3 pt-3 pb-6`}>
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-xs font-bold text-white/90 uppercase bg-white/20 px-2 py-0.5 rounded-full">
+                            {getPosicionFrontend(jugador.PosicionJugadorDB)}
+                          </span>
+                          <span className="text-xs text-white/80">{RAREZA_STARS[rNorm]}</span>
+                        </div>
+                        <div className="w-14 h-14 rounded-full mx-auto mt-1 bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-2xl font-extrabold shadow-lg select-none">
+                          {jugador.NombreJugador.charAt(0)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 px-2 pt-2 pb-2 -mt-3 rounded-t-xl">
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100 text-center text-xs leading-tight truncate">
+                          {jugador.NombreJugador}
+                        </h3>
+                        <p className="text-xs text-gray-400 text-center truncate">{jugador.NombreEquipo}</p>
+                        <div className="flex justify-center mt-1">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${RAREZA_BADGE[rNorm] ?? ''}`}>
+                            {rNorm}
+                          </span>
+                        </div>
+                        {jugador.Puntos != null && (
+                          <p className={`text-center text-xs font-semibold mt-0.5 ${jugador.Puntos < 0 ? 'text-red-500' : 'text-amber-600'}`}>
+                            ⭐ {jugador.Puntos} pts acum.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Configure step — object slots + confirm */}
+        {step === 'configure' && selectedPlayer && (
+          <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+            {maxSlots > 0 ? (
+              <>
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
+                  Slots de objeto ({equippedCount}/{maxSlots})
+                </p>
+                <div className="flex justify-center gap-3 flex-wrap">
+                  {Array.from({ length: maxSlots }).map((_, i) => {
+                    const obj = equippedObjects[i];
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => obj ? handleRemoveObject(i) : setSlotPickerIdx(i)}
+                        title={obj ? `${obj.NombreObjeto} (click para quitar)` : 'Click para equipar objeto'}
+                        className={`w-20 h-20 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all gap-1
+                          ${obj
+                            ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400'
+                            : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-gray-400'
+                          }`}
+                      >
+                        {obj ? (
+                          <>
+                            <span className="text-2xl">🎯</span>
+                            <span className="text-[10px] text-gray-600 dark:text-gray-300 leading-tight text-center px-1 line-clamp-2">{obj.NombreObjeto}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-2xl text-gray-400">+</span>
+                            <span className="text-[10px] text-gray-400">Objeto {i + 1}</span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {equippedCount > 0 && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl px-4 py-2 space-y-1">
+                    {equippedObjects.map((obj, i) =>
+                      obj ? (
+                        <div key={i} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                          <span>🎯</span>
+                          <span className="font-medium">{obj.NombreObjeto}</span>
+                          <button
+                            onClick={() => handleRemoveObject(i)}
+                            className="ml-auto text-red-400 hover:text-red-600 text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : null
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-6">
+                <p className="text-3xl mb-2">🚫</p>
+                <p className="text-sm">Este jugador no tiene slots de objeto.</p>
+                <p className="text-xs mt-1 text-gray-400">Solo los jugadores de rareza Rara o superior pueden equipar objetos.</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 shrink-0 flex gap-2">
+        <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 shrink-0">
           {step === 'select' ? (
-            <>
+            <div className="flex gap-2">
               <button
                 onClick={() => onConfirm(null, [])}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors"
               >
                 Vaciar slot
               </button>
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                className="flex-1 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white text-sm rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Cancelar
               </button>
-            </>
+            </div>
           ) : (
-            <>
+            <div className="flex flex-col gap-2">
               <button
                 onClick={handleConfirm}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3.5 rounded-xl transition-all text-base"
               >
-                {equippedCount > 0 ? `Confirmar (${equippedCount} objeto${equippedCount !== 1 ? 's' : ''})` : 'Confirmar sin objetos'}
+                {equippedCount > 0
+                  ? `✓ Añadir jugador con ${equippedCount} objeto${equippedCount !== 1 ? 's' : ''}`
+                  : '✓ Añadir jugador'}
               </button>
-              <button
-                onClick={() => onConfirm(null, [])}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
-              >
-                Vaciar slot
-              </button>
-              <button
-                onClick={onClose}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white text-sm rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancelar
-              </button>
-            </>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onConfirm(null, [])}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+                >
+                  Vaciar slot
+                </button>
+                <button
+                  onClick={onClose}
+                  className="flex-1 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Object picker mini-modal (z-[60] to sit above parent modal) */}
       {slotPickerIdx !== null && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/60 md:p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[90vh] flex flex-col">
 
             {/* Header */}
             <div className="flex justify-between items-center px-5 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">

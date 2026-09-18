@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Carta } from '@/app/album/page';
+import { Carta } from '@/lib/album-types';
 import { RAREZA_CONFIG, RAREZA_STARS, RAREZA_ICON } from '@/lib/rareza-config';
 import { valorVentaObjeto } from '@/lib/rewards';
 import RarityBadge from '@/components/ui/RarityBadge';
@@ -61,7 +61,7 @@ export default function AlbumObjectCard({ carta, onDelete }: AlbumObjectCardProp
 
                 {/* Body */}
                 <div className="bg-white dark:bg-gray-800 flex-1 flex flex-col px-3 pt-3 pb-2 -mt-5 rounded-t-2xl">
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100 text-center text-sm leading-tight truncate">{carta.Nombre}</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100 text-center text-sm leading-tight line-clamp-2">{carta.Nombre}</h3>
 
                     <div className="flex justify-center my-1">
                         <RarityBadge rareza={carta.Rareza} />

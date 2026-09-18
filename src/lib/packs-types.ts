@@ -5,7 +5,10 @@ export interface PackCard {
   tipo: 'jugador' | 'objeto';
   nombre: string;
   rareza: Rarity;
-  idDB: number; // idJugador o idObjetos según tipo
+  idDB: number;
+  slug?: string | null;
+  equipo?: string;
+  posicion?: string;
 }
 
 export interface PackResult {

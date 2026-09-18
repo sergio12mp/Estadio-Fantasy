@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
           cj.idCartaJugador,
           cj.Rareza,
           j.idJugador AS Jugador_idJugadorDB,
+          j.slug,
           j.Nombre AS NombreJugador,
           j.Posicion AS PosicionJugadorDB,
           po.posicionFrontend AS PosicionOverride,

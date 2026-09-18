@@ -1,5 +1,4 @@
 //withNavBar/layout.tsx
-//import "bootstrap/dist/css/bootstrap.min.css";
 import { Providers } from "@/components/layout/providers";
 import { SelectNavbar } from "@/components/layout/selectNavbar";
 
