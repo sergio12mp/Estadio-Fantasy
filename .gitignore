@@ -41,3 +41,13 @@ r-scripts/jugadores_db.csv
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# secrets / local tool config (never commit)
+.firebaseconf
+.claude/
+*.backup
+
+# test artifacts
+/coverage
+/test-results
+/playwright-report
